@@ -20,13 +20,30 @@
 import 'dotenv/config';
 import express from 'express';
 import { readdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
-import { join } from 'node:path';
 import { generateForClient, saveDraft, recordTopic, loadClient } from './generate.js';
 import { postDraft } from './post.js';
 
 const PORT = parseInt(process.env.PORT || '3000');
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+const FRONTEND_URL = process.env.FRONTEND_URL || '';
+
 const app = express();
+
+app.use((req, res, next) => {
+  const allowed = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    ...(FRONTEND_URL ? [FRONTEND_URL] : []),
+  ];
+  const origin = req.headers.origin;
+  if (!origin || allowed.includes(origin) || (origin && origin.endsWith('.github.io'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Dashboard-Password');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
 app.use(express.json());
 app.use(express.static('./public'));
