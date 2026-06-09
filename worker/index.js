@@ -56,16 +56,14 @@ function timingSafeEqual(a, b) {
 
 async function verifySignature(request, secret) {
   const signature = request.headers.get('x-hub-signature-256');
-  if (!signature) { console.log('[sig] no x-hub-signature-256 header'); return false; }
+  if (!signature) return false;
   const body = await request.clone().arrayBuffer();
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   const mac = await crypto.subtle.sign('HMAC', key, body);
   const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
-  const match = timingSafeEqual(signature, expected);
-  console.log(`[sig] match=${match} recv=${signature.slice(7, 15)} calc=${expected.slice(7, 15)} secretLen=${secret.length}`);
-  return match;
+  return timingSafeEqual(signature, expected);
 }
 
 // ── State management (Cloudflare KV) ───────────────────────────────────────
@@ -134,7 +132,7 @@ export default {
         console.error('WHATSAPP_APP_SECRET not configured');
         return new Response('Service Unavailable', { status: 503 });
       }
-      const valid = env.DEBUG_SKIP_SIG === 'true' || await verifySignature(request, env.WHATSAPP_APP_SECRET);
+      const valid = await verifySignature(request, env.WHATSAPP_APP_SECRET);
       if (!valid) return new Response('Unauthorized', { status: 401 });
 
       if (!env.WHATSAPP_OWNER_NUMBER) {
@@ -149,7 +147,6 @@ export default {
       if (!message) return new Response('OK', { status: 200 });
 
       const from = message.from;
-      console.log(`[debug] from=${from} owner=${env.WHATSAPP_OWNER_NUMBER} match=${from === env.WHATSAPP_OWNER_NUMBER}`);
       if (from !== env.WHATSAPP_OWNER_NUMBER) {
         return new Response('OK', { status: 200 });
       }

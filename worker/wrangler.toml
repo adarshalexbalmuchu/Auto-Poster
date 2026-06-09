@@ -4,7 +4,6 @@ compatibility_date = "2024-09-23"
 
 [vars]
 GITHUB_REPO = "adarshalexbalmuchu/Auto-Poster"
-DEBUG_SKIP_SIG = "true"
 
 [observability.logs]
 enabled = true
@@ -20,3 +19,4 @@ id = "7184454afd984de8b46e788fdf689a2a"
 # WHATSAPP_PHONE_NUMBER_ID
 # WHATSAPP_OWNER_NUMBER
 # GITHUB_TOKEN
+# WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
