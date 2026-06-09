@@ -308,6 +308,7 @@ async function ghDispatch(env, workflow, inputs) {
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
       Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
+      'User-Agent': 'auto-poster-worker/1.0',
       'X-GitHub-Api-Version': '2022-11-28',
     },
     body: JSON.stringify({ ref: 'main', inputs }),
