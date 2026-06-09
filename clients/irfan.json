@@ -3,61 +3,78 @@
   "name": "Irfan",
   "fullName": "Irfan Sheikh",
   "active": true,
-
   "linkedin": {
-    "accessToken": "",
-    "personUrn": "",
-    "tokenExpiresAt": ""
+    "accessToken": "AQV1DFfCYm7hM5i-I35135zKkV39L_liBxo3JSmHUUZKtESK9dkEy9kT03huPB7bicCJSAHt5UmDkMrej7E8ejac8rVgad5XdiAp47n62uQKq9Hc4KMQZ4zYjKUKZz6x4Dx2Y_fw87mgBIfQjkVsn24nCHD95pXOXiCDMz1i5MlQuSayHkLtgQuIhCYqvrg7QFaHkVfo0SeSp9DzEkKwRyMHsXLRus-LpFAVIGqDOzlbLVbBsKYoUIR57EljFNpp7ecK5U45stbfBDwQBMYeEKYvbXf9du03rRpFsgmuVE4fXRmX6dIE7Gk2vr8iUzJvbvUX2CyvwuG3ug10A1cCrKhbWqhk9g",
+    "personUrn": "urn:li:person:3OERsi6e6P",
+    "tokenExpiresAt": "2026-08-08T12:32:09.601Z"
   },
-
   "voice": "WRITING MECHANICS: Never uses em dashes. No bullet points in posts. No numbered lists. Writes in short punchy single-sentence paragraphs mixed with longer 2-3 sentence paragraphs. Never opens with 'I' — always opens with an observation, a fact, or a scene. Hashtags go at the bottom separated by line breaks, never inline.\n\nCHARACTERISTIC MOVES: Opens every post with a single provocative line that creates tension before the 'see more' cutoff. Uses repetition for emphasis — 'Not in theory. Not in a research paper. Right now.' Asks one direct question at the end, always aimed personally at the reader using 'you' or 'your organisation.' Ends on a leadership implication, never a product recommendation or a call to follow.\n\nCREDIBILITY ANCHORS: 25 years of delivery experience at Vodafone, Atos, Capgemini. References these not by name-dropping but by saying 'I have seen this fail' or 'I have sat in those rooms.' Never claims to be an AI builder or researcher — always an enterprise practitioner applying delivery experience to AI. The gap between what AI can do and what organisations are actually ready for is his permanent home base.\n\nWHAT HE NEVER SAYS: Never uses: delve, it is worth noting, in today's rapidly evolving landscape, game-changer, unlock, leverage, cutting-edge, harness, seamlessly. Never writes compliance theatre as genuine advice — calls it out as insufficient. Never gives generic AI optimism without a grounded counterpoint.\n\nRELATIONSHIP WITH NEWS: Uses current AI news stories as a mirror to hold up to enterprise leaders. Never summarises the news. Always pivots fast to 'here is what this means for your organisation.' The news is the hook, the enterprise implication is the post.\n\nRELATIONSHIP WITH DATA: Uses one strong number per post maximum. The number is never the point — it is the proof. Leads with the human or organisational insight, drops the data to back it, moves on.\n\nTONE: A senior practitioner who has delivered too many complex transformations to be impressed by AI hype, but has seen enough to know that the leaders who get governance right now will be the ones trusted with more capability later.",
-
   "about": "25 years of enterprise technology leadership across cloud transformation, programme delivery, and operating model redesign. Senior roles at Vodafone, Atos, Capgemini, Interserve, and Travis Perkins. Now focused on enterprise AI adoption and governance. Based in the United Kingdom, targeting European and Asian business audiences. Not an AI builder or researcher — an enterprise delivery veteran who understands how large organisations actually work, and applies that lens to AI. The gap he writes about: most AI rollouts fail culturally, not technically.",
-
   "pillars": [
     {
       "id": "ai-enterprise-ops",
       "label": "AI Transforming Enterprise Operations",
       "description": "How AI is reshaping back-office functions, supply chains, and large-scale decision-making. Real enterprise use cases, not startup demos. What actually works at scale inside complex organisations.",
-      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"]
+      "hashtags": [
+        "#EnterpriseAI",
+        "#AIAdoption",
+        "#DigitalTransformation"
+      ]
     },
     {
       "id": "human-side-ai",
       "label": "The Human Side of AI Adoption",
       "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the gap between pilot success and organisation-wide deployment.",
-      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"]
+      "hashtags": [
+        "#ChangeManagement",
+        "#AILeadership",
+        "#FutureOfWork"
+      ]
     },
     {
       "id": "europe-asia-ai",
       "label": "Europe vs Asia AI Landscape",
       "description": "Regulatory contrast between EU AI Act and Asia-Pacific approaches. Investment trends, sovereign AI strategies, what European enterprises can learn from Asian deployment speed and vice versa.",
-      "hashtags": ["#AIPolicy", "#EUAIAct", "#TechLeadership"]
+      "hashtags": [
+        "#AIPolicy",
+        "#EUAIAct",
+        "#TechLeadership"
+      ]
     },
     {
       "id": "future-enterprise",
       "label": "The Future Enterprise",
       "description": "What AI-native organisations actually look like in practice. Operating model redesign, governance frameworks, the difference between AI-washed and AI-led organisations. Leadership decisions that separate those who benefit from AI from those who don't.",
-      "hashtags": ["#FutureOfWork", "#AIGovernance", "#EnterpriseStrategy"]
+      "hashtags": [
+        "#FutureOfWork",
+        "#AIGovernance",
+        "#EnterpriseStrategy"
+      ]
     }
   ],
-
   "postingSchedule": {
     "postsPerWeek": 3,
-    "days": ["Tuesday", "Wednesday", "Thursday"],
+    "days": [
+      "Tuesday",
+      "Wednesday",
+      "Thursday"
+    ],
     "timeUK": "08:30",
     "timezone": "Europe/London"
   },
-
-  "formats": ["text", "list", "story"],
-
+  "formats": [
+    "text",
+    "list",
+    "story"
+  ],
   "avoidTopics": [
     "AI product reviews or tool comparisons",
     "Startup or VC funding news",
     "Technical AI research or model benchmarks",
     "Generic productivity tips"
   ],
-
   "audienceNotes": "Primary: European C-suite, senior IT and operations leaders, digital transformation directors. Secondary: Asia-Pacific enterprise leaders. Thursday posts carry into Asia afternoon engagement window. Audience is experienced — they have seen transformation programmes fail. They respect candour over cheerleading.",
-
-  "recentTopics": []
+  "recentTopics": [
+    "Why enterprise AI pilots keep succeeding while organisation-wide rollouts keep failing — and what the pattern actually reveals about accountability structures."
+  ]
 }
