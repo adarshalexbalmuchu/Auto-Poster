@@ -1,0 +1,24 @@
+{
+  "name": "auto-poster",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered LinkedIn automation — Claude generates posts, schedules and publishes them.",
+  "scripts": {
+    "auth": "node src/auth.js",
+    "generate": "node src/generate.js",
+    "post": "node src/post.js",
+    "run": "node src/run.js",
+    "schedule": "node src/scheduler.js",
+    "dashboard": "node src/dashboard.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "open": "^10.1.0",
+    "pdf-lib": "^1.17.1"
+  }
+}
