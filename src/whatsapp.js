@@ -30,10 +30,11 @@ export async function sendWhatsApp(text) {
     }),
   });
 
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(`WhatsApp API error: ${JSON.stringify(data)}`);
+    throw new Error(`WhatsApp API error ${res.status}: ${JSON.stringify(data)}`);
   }
+  return data;
 }
 
 export function formatDraftMessage(result, draftFilename) {
