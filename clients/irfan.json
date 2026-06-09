@@ -10,25 +10,33 @@
       "id": "ai-at-work",
       "label": "AI at Work",
       "description": "How AI is actually changing enterprise operations from the inside — not from a consultant's slide deck, but from someone who sat inside slow-moving, complex organisations and watched them resist change. Supply chains, back-office functions, large-scale decision-making. Includes cross-industry observations from telecoms (Vodafone) to logistics (Travis Perkins) to IT services (Atos, Capgemini) to facilities (Interserve) — the contrast between AI-native companies and legacy-heavy industries nobody else is writing about.",
-      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"]
+      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"],
+      "frequency": 1,
+      "last_posted": null
     },
     {
       "id": "adoption-gap",
       "label": "The Adoption Gap",
       "description": "The gap between pilot intent and production deployment — Irfan's sharpest and most differentiated angle. Why enterprise AI pilots keep succeeding while organisation-wide rollouts keep failing. Accountability structures, governance failures, delivery experience not theory. The most contrarian takes belong here. This is where Irfan's 25 years of watching complex programmes fail culturally — not technically — gives him credibility no researcher or startup founder can match.",
-      "hashtags": ["#AIAdoption", "#EnterpriseAI", "#AIGovernance"]
+      "hashtags": ["#AIAdoption", "#EnterpriseAI", "#AIGovernance"],
+      "frequency": 1,
+      "last_posted": null
     },
     {
       "id": "human-side-ai",
       "label": "Human Side of AI",
       "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the emotional and organisational friction that no governance framework addresses. Universal and human — travels well across European and Asian enterprise audiences. The warmest pillar, highest engagement potential.",
-      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"]
+      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"],
+      "frequency": 1,
+      "last_posted": null
     },
     {
       "id": "sharp-takes",
       "label": "Sharp Takes",
       "description": "Whatever Irfan is actually thinking about that week. A news story that annoyed him, a conversation he had, something he read that he disagreed with, an observation from a client meeting, a prediction he wants to make publicly. No fixed topic. No format rules. The only rule: it must be an actual opinion — something he would say in a room of senior people and stand behind if challenged. Not a summary of someone else's article. Not a safe take. This is where his most viral posts will come from.",
-      "hashtags": ["#AILeadership", "#EnterpriseStrategy", "#TechLeadership"]
+      "hashtags": ["#AILeadership", "#EnterpriseStrategy", "#TechLeadership"],
+      "frequency": 0,
+      "last_posted": null
     }
   ],
   "postingSchedule": {

@@ -45,6 +45,35 @@ export function loadClient(clientId) {
   }
 }
 
+// ─── Pillar selection ─────────────────────────────────────────────────────────
+
+function selectPillar(client) {
+  const today = new Date();
+  const eligible = client.pillars.filter(p => (p.frequency ?? 1) > 0);
+  if (!eligible.length) return client.pillars[0];
+
+  const scored = eligible.map(p => {
+    const daysSince = p.last_posted
+      ? Math.floor((today - new Date(p.last_posted)) / 86_400_000)
+      : 999;
+    return { pillar: p, score: daysSince * (p.frequency ?? 1) };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].pillar;
+}
+
+export function updatePillarLastPosted(clientId, pillarId) {
+  validateClientId(clientId);
+  const path = `./clients/${clientId}.json`;
+  const client = JSON.parse(readFileSync(path, 'utf8'));
+  const pillar = client.pillars.find(p => p.id === pillarId);
+  if (pillar) pillar.last_posted = new Date().toISOString().slice(0, 10);
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(client, null, 2));
+  renameSync(tmp, path);
+}
+
 // ─── Topic selection ──────────────────────────────────────────────────────────
 
 function buildTopicPrompt(client, pillarId = null) {
@@ -198,9 +227,11 @@ export async function generateForClient(clientId, opts = {}) {
 
   let topicData;
 
+  const selectedPillarId = opts.pillarId || selectPillar(client).id;
+
   if (opts.seed) {
     topicData = {
-      pillarId: opts.pillarId || client.pillars[0].id,
+      pillarId: selectedPillarId,
       topic: opts.seed,
       angle: opts.seed,
       format: opts.format && opts.format !== 'carousel' ? opts.format : (client.formats[0] || 'text'),
@@ -209,7 +240,7 @@ export async function generateForClient(clientId, opts = {}) {
     const topicMsg = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 512,
-      messages: [{ role: 'user', content: buildTopicPrompt(client, opts.pillarId) }],
+      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId) }],
     });
 
     const raw = topicMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();

@@ -10,7 +10,7 @@
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { postText, postWithImage, uploadAndPostDocument } from './linkedin.js';
-import { loadClient } from './generate.js';
+import { loadClient, updatePillarLastPosted } from './generate.js';
 import { buildCarouselPdf } from './carousel.js';
 
 const HISTORY_PATH = './drafts/history.json';
@@ -76,6 +76,9 @@ export async function postDraft(draftPath, opts = {}) {
 
   markPosted(draftPath, draft, result.postId);
   appendHistory(draft);
+  if (draft.topicData?.pillarId) {
+    updatePillarLastPosted(draft.clientId, draft.topicData.pillarId);
+  }
   return result;
 }
 
