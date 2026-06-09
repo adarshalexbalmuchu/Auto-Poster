@@ -10,17 +10,21 @@
 const LINKEDIN_API_V2 = 'https://api.linkedin.com/v2';
 const LINKEDIN_REST = 'https://api.linkedin.com/rest';
 
+function envKey(clientId, suffix) {
+  return process.env[`${clientId.toUpperCase()}_LINKEDIN_${suffix}`] || process.env[`LINKEDIN_${suffix}`];
+}
+
 export function isTokenValid(client) {
-  const token = process.env.LINKEDIN_ACCESS_TOKEN || client.linkedin?.accessToken;
+  const token = envKey(client.id, 'ACCESS_TOKEN');
   if (!token) return false;
-  const expiresAt = process.env.LINKEDIN_TOKEN_EXPIRES_AT || client.linkedin?.tokenExpiresAt;
+  const expiresAt = envKey(client.id, 'TOKEN_EXPIRES_AT');
   if (!expiresAt) return !!token;
   return new Date(expiresAt) > new Date(Date.now() + 24 * 60 * 60 * 1000);
 }
 
 function getCredentials(client) {
-  const accessToken = process.env.LINKEDIN_ACCESS_TOKEN || client.linkedin?.accessToken;
-  const personUrn   = process.env.LINKEDIN_PERSON_URN   || client.linkedin?.personUrn;
+  const accessToken = envKey(client.id, 'ACCESS_TOKEN');
+  const personUrn   = envKey(client.id, 'PERSON_URN');
   return { accessToken, personUrn };
 }
 
