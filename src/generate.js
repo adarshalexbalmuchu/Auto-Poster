@@ -11,7 +11,15 @@
 
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
+
+const HISTORY_PATH = './drafts/history.json';
+
+function readHistory(clientId) {
+  if (!existsSync(HISTORY_PATH)) return [];
+  const all = JSON.parse(readFileSync(HISTORY_PATH, 'utf8'));
+  return all.filter(r => r.client === clientId).slice(-10);
+}
 
 const anthropic = new Anthropic();
 
@@ -56,6 +64,11 @@ function buildTopicPrompt(client, pillarId = null) {
     ? `\nAudience: ${client.audienceNotes}`
     : '';
 
+  const history = readHistory(client.id);
+  const historyBlock = history.length
+    ? `\nDo not repeat a topic or opening hook style from these recent published posts:\n${history.map(r => `- [${r.date}] ${r.topic} | hook: "${r.hook}"`).join('\n')}`
+    : '';
+
   return `You are a content strategist for ${client.name}.
 
 About ${client.name}:
@@ -64,7 +77,7 @@ ${audienceNote}
 
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
-${recentList}${avoidList}
+${recentList}${historyBlock}${avoidList}
 
 Pick ONE specific, interesting topic for a LinkedIn post today.
 Choose something timely, specific, and authentic — not generic advice.
