@@ -53,8 +53,8 @@ About ${client.name}:
 ${client.about}
 ${audienceNote}
 
-Content pillars:
-${pillars.map(p => `- ${p.label}: ${p.description}`).join('\n')}
+Content pillars (use the exact id value in your response):
+${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
 ${recentList}${avoidList}
 
 Pick ONE specific, interesting topic for a LinkedIn post today.
