@@ -19,10 +19,16 @@ import 'dotenv/config';
 import express from 'express';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
-const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
-const REDIRECT_URI = process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:3000/callback';
 const PORT = parseInt(process.env.PORT || '3000');
+
+function getCredentials(clientId) {
+  const prefix = clientId.toUpperCase();
+  return {
+    clientId:     process.env[`${prefix}_LINKEDIN_CLIENT_ID`]     || process.env.LINKEDIN_CLIENT_ID,
+    clientSecret: process.env[`${prefix}_LINKEDIN_CLIENT_SECRET`] || process.env.LINKEDIN_CLIENT_SECRET,
+    redirectUri:  process.env[`${prefix}_LINKEDIN_REDIRECT_URI`]  || process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:3000/callback',
+  };
+}
 
 const SCOPES = ['openid', 'profile', 'w_member_social'].join(' ');
 
@@ -58,13 +64,13 @@ function saveToken(clientPath, clientData, tokenData, personUrn) {
   writeFileSync(clientPath, JSON.stringify(updated, null, 2));
 }
 
-async function exchangeCode(code) {
+async function exchangeCode(code, { clientId, clientSecret, redirectUri }) {
   const params = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: REDIRECT_URI,
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
   });
 
   const res = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
@@ -90,16 +96,19 @@ async function getPersonUrn(accessToken) {
 }
 
 async function main() {
-  if (!CLIENT_ID || !CLIENT_SECRET) {
-    console.error('Missing LINKEDIN_CLIENT_ID or LINKEDIN_CLIENT_SECRET in .env');
-    console.error('Set up a LinkedIn Developer App at: https://www.linkedin.com/developers/apps/new');
-    process.exit(1);
-  }
-
   const { clientId } = parseArgs();
   if (!clientId) {
     console.error('Usage: npm run auth -- --client <client-id>');
     console.error('Example: npm run auth -- --client alex');
+    process.exit(1);
+  }
+
+  const creds = getCredentials(clientId);
+  if (!creds.clientId || !creds.clientSecret) {
+    const prefix = clientId.toUpperCase();
+    console.error(`Missing LinkedIn credentials for client "${clientId}".`);
+    console.error(`Add to .env: ${prefix}_LINKEDIN_CLIENT_ID and ${prefix}_LINKEDIN_CLIENT_SECRET`);
+    console.error(`(or the generic LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET as fallback)`);
     process.exit(1);
   }
 
@@ -108,8 +117,8 @@ async function main() {
   const state = Math.random().toString(36).slice(2);
   const authUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('client_id', CLIENT_ID);
-  authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+  authUrl.searchParams.set('client_id', creds.clientId);
+  authUrl.searchParams.set('redirect_uri', creds.redirectUri);
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('scope', SCOPES);
 
@@ -146,7 +155,7 @@ async function main() {
       try {
         res.send('<h2>Authorised! Saving token...</h2><p>You can close this tab.</p>');
 
-        const tokenData = await exchangeCode(code);
+        const tokenData = await exchangeCode(code, creds);
         const personUrn = await getPersonUrn(tokenData.access_token);
 
         saveToken(clientPath, clientData, tokenData, personUrn);
@@ -165,7 +174,7 @@ async function main() {
     });
 
     server = app.listen(PORT, () => {
-      console.log(`Waiting for LinkedIn callback on http://localhost:${PORT}/callback ...`);
+      console.log(`Waiting for LinkedIn callback on ${creds.redirectUri} ...`);
     });
   });
 
