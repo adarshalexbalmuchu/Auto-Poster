@@ -175,6 +175,64 @@ Then update `IRFAN_LINKEDIN_ACCESS_TOKEN` / `ALEX_LINKEDIN_ACCESS_TOKEN` in GitH
 
 ---
 
+## Deploying the Worker
+
+Always deploy via the gated command — it runs pre-deploy checks first and refuses to deploy if anything is wrong:
+
+```bash
+npm run deploy-worker
+```
+
+This blocks on:
+- `DEBUG_SKIP_SIG` left in `wrangler.toml` or `worker/index.js`
+- Any required Cloudflare secret not set
+- Missing GitHub Actions workflow files
+
+To check config independently without deploying:
+
+```bash
+npm run pre-deploy
+```
+
+### Health endpoint
+
+After deploying, verify all secrets are configured:
+
+```
+GET https://auto-poster-webhook.auto-poster.workers.dev/health
+```
+
+Returns `200 ok` when all secrets are set, `503 degraded` with a checklist of what's missing:
+
+```json
+{
+  "status": "degraded",
+  "checks": {
+    "WHATSAPP_VERIFY_TOKEN": true,
+    "WHATSAPP_APP_SECRET": false,
+    "WHATSAPP_ACCESS_TOKEN": true,
+    ...
+  }
+}
+```
+
+Run this immediately after every deploy to confirm nothing is missing.
+
+### Manual secret rotation
+
+If a secret changes (e.g. new WhatsApp access token), update it in both places:
+
+```bash
+# Cloudflare Worker
+cd worker && npx wrangler secret put WHATSAPP_ACCESS_TOKEN
+
+# GitHub Actions → Settings → Secrets → Actions → update the same key
+```
+
+Then redeploy and check `/health`.
+
+---
+
 ## Local usage
 
 ```bash

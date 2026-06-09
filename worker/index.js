@@ -110,6 +110,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (request.method === 'GET' && url.pathname === '/health') {
+      const required = [
+        'WHATSAPP_VERIFY_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_ACCESS_TOKEN',
+        'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_OWNER_NUMBER', 'GITHUB_TOKEN', 'WORKER_CALLBACK_SECRET',
+      ];
+      const checks = Object.fromEntries(required.map(k => [k, !!env[k]]));
+      checks.STATE_KV = !!env.STATE;
+      const ok = Object.values(checks).every(Boolean);
+      return Response.json({ status: ok ? 'ok' : 'degraded', checks }, { status: ok ? 200 : 503 });
+    }
+
     if (request.method === 'GET') {
       const mode      = url.searchParams.get('hub.mode');
       const token     = url.searchParams.get('hub.verify_token');
