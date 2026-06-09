@@ -52,6 +52,7 @@ async function apiPost(url, token, body, extraHeaders = {}) {
     method: 'POST',
     headers: { ...authHeaders(token), ...extraHeaders },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(20_000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -116,6 +117,7 @@ export async function uploadBinary(uploadUrl, buffer, token, contentType = 'imag
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': contentType },
     body: buffer,
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');

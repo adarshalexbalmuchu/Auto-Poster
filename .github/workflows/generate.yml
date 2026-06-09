@@ -24,6 +24,8 @@ on:
         description: 'Topic seed (leave blank for Claude to pick)'
         required: false
 
+permissions: {}
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -56,17 +58,12 @@ jobs:
           INPUT_PILLAR:                     ${{ inputs.pillar }}
           INPUT_FORMAT:                     ${{ inputs.format }}
           INPUT_SEED:                       ${{ inputs.seed }}
-        run: |
-          ARGS="--client ${INPUT_CLIENT}"
-          [ -n "${INPUT_PILLAR}" ] && ARGS="$ARGS --pillar ${INPUT_PILLAR}"
-          [ -n "${INPUT_FORMAT}" ] && ARGS="$ARGS --format ${INPUT_FORMAT}"
-          [ -n "${INPUT_SEED}"   ] && ARGS="$ARGS --seed ${INPUT_SEED}"
-          node src/run.js $ARGS
+        run: node src/run.js
 
       - name: Commit draft
         run: |
+          set -e
           git config user.name  "Auto-Poster Bot"
           git config user.email "bot@auto-poster.local"
           git add -f drafts/
-          git diff --staged --quiet || git commit -m "draft: $(date -u +%Y-%m-%dT%H:%M:%S)"
-          git push
+          git diff --staged --quiet || (git pull --rebase origin main && git commit -m "draft: $(date -u +%Y-%m-%dT%H:%M:%S)" && git push)

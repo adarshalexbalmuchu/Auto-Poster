@@ -7,7 +7,7 @@
  *   WHATSAPP_RECIPIENT_NUMBER — your WhatsApp number in E.164 format (e.g. 919876543210)
  */
 
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 const API = 'https://graph.facebook.com/v20.0';
 
@@ -24,6 +24,7 @@ async function waPost(phoneNumberId, token, payload) {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10_000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`WhatsApp API error ${res.status}: ${JSON.stringify(data)}`);
@@ -32,7 +33,10 @@ async function waPost(phoneNumberId, token, payload) {
 
 export async function sendWhatsApp(text) {
   const { token, phoneNumberId, to } = getEnv();
-  if (!token || !phoneNumberId || !to) return;
+  if (!token || !phoneNumberId || !to) {
+    console.warn('[whatsapp] Credentials missing — notification skipped');
+    return;
+  }
   await waPost(phoneNumberId, token, {
     messaging_product: 'whatsapp', to, type: 'text', text: { body: text },
   });
@@ -51,7 +55,7 @@ async function sendButtons(phoneNumberId, token, to, body, buttons) {
 }
 
 async function uploadMedia(phoneNumberId, token, filePath, contentType) {
-  const fileBuffer = readFileSync(filePath);
+  const fileBuffer = await readFile(filePath);
   const form = new FormData();
   form.append('messaging_product', 'whatsapp');
   form.append('type', contentType);
@@ -61,6 +65,7 @@ async function uploadMedia(phoneNumberId, token, filePath, contentType) {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
+    signal: AbortSignal.timeout(30_000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Media upload failed ${res.status}: ${JSON.stringify(data)}`);
@@ -76,7 +81,10 @@ async function sendDocument(phoneNumberId, token, to, mediaId, caption, filename
 
 export async function sendDraftNotification(result, draftFilename) {
   const { token, phoneNumberId, to } = getEnv();
-  if (!token || !phoneNumberId || !to) return;
+  if (!token || !phoneNumberId || !to) {
+    console.warn('[whatsapp] Credentials missing — draft notification skipped');
+    return;
+  }
 
   const { client, topicData, postText, type, carouselData } = result;
 
@@ -89,7 +97,6 @@ export async function sendDraftNotification(result, draftFilename) {
   ].filter(l => l !== null).join('\n');
 
   if (type === 'carousel' && carouselData) {
-    // Send carousel: text preview of slides
     const slideList = carouselData.slides
       .map(s => `${s.id}. *${s.headline}*\n${s.body.slice(0, 80)}${s.body.length > 80 ? '…' : ''}`)
       .join('\n\n');
@@ -99,16 +106,14 @@ export async function sendDraftNotification(result, draftFilename) {
       messaging_product: 'whatsapp', to, type: 'text', text: { body: preview },
     });
 
-    // Try to send the PDF if it exists
     const pdfPath = draftFilename.replace('.json', '.pdf');
     try {
       const mediaId = await uploadMedia(phoneNumberId, token, pdfPath, 'application/pdf');
       await sendDocument(phoneNumberId, token, to, mediaId, carouselData.caption.slice(0, 1024), `${topicData.topic.slice(0, 40)}.pdf`);
-    } catch {
-      // PDF not yet generated — that's fine, user has the text preview
+    } catch (e) {
+      if (e.code !== 'ENOENT') console.warn('[whatsapp] PDF send failed:', e.message);
     }
   } else {
-    // Text post preview
     const preview = postText.length > 3900 ? postText.slice(0, 3900) + '…' : postText;
     await waPost(phoneNumberId, token, {
       messaging_product: 'whatsapp', to, type: 'text',
@@ -116,7 +121,6 @@ export async function sendDraftNotification(result, draftFilename) {
     });
   }
 
-  // Send action buttons
   await sendButtons(phoneNumberId, token, to,
     'What would you like to do?',
     [

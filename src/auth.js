@@ -17,7 +17,7 @@
 
 import 'dotenv/config';
 import express from 'express';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
 
 const PORT = parseInt(process.env.PORT || '3000');
 
@@ -73,7 +73,9 @@ function saveTokenToEnv(clientId, tokenData, personUrn) {
     }
   }
 
-  writeFileSync(envPath, content);
+  const tmp = `${envPath}.tmp`;
+  writeFileSync(tmp, content, { mode: 0o600 });
+  renameSync(tmp, envPath);
   return expiresAt;
 }
 
@@ -90,6 +92,7 @@ async function exchangeCode(code, { clientId, clientSecret, redirectUri }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params,
+    signal: AbortSignal.timeout(15_000),
   });
 
   const data = await res.json();
@@ -102,6 +105,7 @@ async function exchangeCode(code, { clientId, clientSecret, redirectUri }) {
 async function getPersonUrn(accessToken) {
   const res = await fetch('https://api.linkedin.com/v2/userinfo', {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(15_000),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`Failed to get profile: ${JSON.stringify(data)}`);
@@ -150,7 +154,10 @@ async function main() {
   let server;
 
   await new Promise((resolve, reject) => {
+    let callbackHandled = false;
     app.get('/callback', async (req, res) => {
+      if (callbackHandled) { res.send('<h2>Already handled.</h2>'); return; }
+      callbackHandled = true;
       const { code, state: returnedState, error } = req.query;
 
       if (error) {

@@ -11,15 +11,24 @@
 
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
 
 const anthropic = new Anthropic();
 
 const MODEL = 'claude-sonnet-4-6';
 
+const ALLOWED_CLIENTS = new Set(['irfan', 'alex']);
+
+function validateClientId(clientId) {
+  if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
+    throw new Error(`Unknown client: ${clientId}`);
+  }
+}
+
 // ─── Load client ──────────────────────────────────────────────────────────────
 
 export function loadClient(clientId) {
+  validateClientId(clientId);
   const path = `./clients/${clientId}.json`;
   try {
     return JSON.parse(readFileSync(path, 'utf8'));
@@ -71,9 +80,13 @@ Return ONLY valid JSON (no markdown, no explanation):
 
 // ─── Post writing ─────────────────────────────────────────────────────────────
 
+function getPillarHashtags(client, pillarId, max = 3) {
+  const pillar = client.pillars.find(p => p.id === pillarId) || client.pillars[0];
+  return pillar.hashtags.slice(0, max).join(', ');
+}
+
 function buildPostPrompt(client, topicData) {
-  const pillar = client.pillars.find(p => p.id === topicData.pillarId) || client.pillars[0];
-  const hashtags = pillar.hashtags.slice(0, 3).join(', ');
+  const hashtags = getPillarHashtags(client, topicData.pillarId);
 
   const formatGuides = {
     text: 'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–350 words total.',
@@ -110,8 +123,7 @@ Write now:`;
 // ─── Carousel slide writing ───────────────────────────────────────────────────
 
 function buildCarouselPrompt(client, topicData) {
-  const pillar = client.pillars.find(p => p.id === topicData.pillarId) || client.pillars[0];
-  const hashtags = pillar.hashtags.slice(0, 3).join(', ');
+  const hashtags = getPillarHashtags(client, topicData.pillarId);
 
   return `You are writing a LinkedIn carousel (PDF document post) for ${client.name}.
 
@@ -232,12 +244,13 @@ export function saveDraft(clientId, result) {
 }
 
 export function recordTopic(clientId, topic) {
+  validateClientId(clientId);
   const path = `./clients/${clientId}.json`;
   const client = JSON.parse(readFileSync(path, 'utf8'));
-  const recent = client.recentTopics || [];
-  recent.push(topic);
-  client.recentTopics = recent.slice(-20);
-  writeFileSync(path, JSON.stringify(client, null, 2));
+  client.recentTopics = [...new Set([...(client.recentTopics || []), topic])].slice(-20);
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(client, null, 2));
+  renameSync(tmp, path);
 }
 
 // ─── CLI ──────────────────────────────────────────────────────────────────────
