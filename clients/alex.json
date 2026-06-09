@@ -3,60 +3,86 @@
   "name": "Alex",
   "fullName": "Adarsh Alex Balmuchu",
   "active": true,
-
   "linkedin": {
-    "accessToken": "",
-    "personUrn": "",
-    "tokenExpiresAt": ""
+    "accessToken": "AQUZRWhNpuk4TuMzCpI9c7EowF8HeRhiuW9F56dWUB36jrg4klntkFfhe27O8M-ify8YK5BOb_wUqy22skp02jQ7bqx85lNU1ukNFunwD32cRgvKPhVZWA8UeFOrZDrzOFjL_u4lJRurcCndVy7UalRY6JWoMQNpKvtejXt5eY7g-LjFUwdb1oeDrkzQZHxKlNtm_dgSZmDE6xgV2wmlYVaFYPTOMQ3CdTavGdQ8q3IqjZBmS8an7qU7D3qwhrQdVuMFI3bRvXyxrttLuN2dDRmbtVxDiCiofypgkO-H7OmtxDgNeFUM52rpmGusZa_tHs46FqUkrVtKJEX1fm_qc4cK18fH0A",
+    "personUrn": "urn:li:person:8fwB4KAJ6V",
+    "tokenExpiresAt": "2026-08-08T12:35:08.343Z"
   },
-
   "voice": "Direct and plain. No corporate filler. Writes like a person, not a brand. Starts with a specific observation or moment, not a grand claim. Short sentences. Never uses em dashes, 'delve', 'leverage', 'revolutionize'. References real things: civic tech projects, field work, code, trading, photography, urban policy. Ends with a question or nothing — never a forced 'what do you think?'. Benchmark tone: field notes from rural Jharkhand — grounded, observational, human.",
-
   "about": "Final-year student at IIM Ranchi. Builds civic tech projects (FloodReady Delhi — a GIS-based ward-level flood prediction system). Freelance web developer. Intraday equity and F&O trader. Wildlife and street photographer with 7+ years experience. Writes a LinkedIn series called 'The Notebook'. Passionate about urban policy, conservation, and building real things.",
-
   "pillars": [
     {
       "id": "civic-tech",
       "label": "Civic Tech & Urban Policy",
       "description": "FloodReady Delhi, GIS, 290-ward flood prediction, Yamuna river levels, public infrastructure gaps, urban flooding policy.",
-      "hashtags": ["#CivicTech", "#UrbanPolicy", "#GIS", "#FloodReady"]
+      "hashtags": [
+        "#CivicTech",
+        "#UrbanPolicy",
+        "#GIS",
+        "#FloodReady"
+      ]
     },
     {
       "id": "building",
       "label": "Building in Public",
       "description": "Web development projects — Provoke AI (argument-based document reading app), Unitech India e-commerce site, Blast Learning edtech platform. Real problems, real constraints, honest lessons.",
-      "hashtags": ["#BuildingInPublic", "#WebDev", "#IndieHacker"]
+      "hashtags": [
+        "#BuildingInPublic",
+        "#WebDev",
+        "#IndieHacker"
+      ]
     },
     {
       "id": "the-notebook",
       "label": "The Notebook",
       "description": "Personal essays and field notes. Rasabeda SIIP fieldwork in Jharkhand, Subarnarekha river cleanup (500kg waste), conservation, wildlife photography observations.",
-      "hashtags": ["#TheNotebook", "#Conservation", "#FieldNotes"]
+      "hashtags": [
+        "#TheNotebook",
+        "#Conservation",
+        "#FieldNotes"
+      ]
     },
     {
       "id": "ai-tools",
       "label": "AI & Enterprise",
       "description": "AI adoption in India, gap between GenAI pilot intent and production deployment, honest takes on what actually works vs hype.",
-      "hashtags": ["#AI", "#EnterpriseAI", "#India"]
+      "hashtags": [
+        "#AI",
+        "#EnterpriseAI",
+        "#India"
+      ]
     },
     {
       "id": "trading",
       "label": "Trading & Markets",
       "description": "Intraday equity, F&O observations. What you noticed in the market, not advice. Honest, specific, not advisory.",
-      "hashtags": ["#Trading", "#EquityMarkets"]
+      "hashtags": [
+        "#Trading",
+        "#EquityMarkets"
+      ]
     }
   ],
-
   "postingSchedule": {
     "postsPerWeek": 5,
-    "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
     "timeIST": "09:00",
     "timezone": "Asia/Kolkata"
   },
-
-  "formats": ["text", "list", "story", "notebook"],
-
+  "formats": [
+    "text",
+    "list",
+    "story",
+    "notebook"
+  ],
   "avoidTopics": [],
-
-  "recentTopics": []
+  "recentTopics": [
+    "Why FloodReady Delhi predicts flooding at the ward level instead of the city level, and what 290 wards taught me about granularity in public infrastructure data",
+    "How the Nifty 50 behaved in the final 30 minutes of Thursday's session and what the order flow told me about institutional positioning before Friday's expiry."
+  ]
 }
