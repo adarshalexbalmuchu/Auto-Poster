@@ -8,10 +8,28 @@
  */
 
 import 'dotenv/config';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { postText, postWithImage, uploadAndPostDocument } from './linkedin.js';
 import { loadClient } from './generate.js';
 import { buildCarouselPdf } from './carousel.js';
+
+const HISTORY_PATH = './drafts/history.json';
+
+function appendHistory(draft) {
+  const records = existsSync(HISTORY_PATH)
+    ? JSON.parse(readFileSync(HISTORY_PATH, 'utf8'))
+    : [];
+  records.push({
+    client: draft.clientId,
+    pillar:  draft.topicData?.pillarId || '',
+    topic:   draft.topicData?.topic    || '',
+    hook:    draft.postText?.split('\n').find(l => l.trim()) || '',
+    date:    new Date().toISOString().slice(0, 10),
+  });
+  const tmp = `${HISTORY_PATH}.tmp`;
+  writeFileSync(tmp, JSON.stringify(records, null, 2));
+  renameSync(tmp, HISTORY_PATH);
+}
 
 export async function postDraft(draftPath, opts = {}) {
   let draft;
@@ -57,6 +75,7 @@ export async function postDraft(draftPath, opts = {}) {
   }
 
   markPosted(draftPath, draft, result.postId);
+  appendHistory(draft);
   return result;
 }
 
