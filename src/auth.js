@@ -17,7 +17,7 @@
 
 import 'dotenv/config';
 import express from 'express';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 const PORT = parseInt(process.env.PORT || '3000');
 
@@ -47,21 +47,34 @@ function loadClient(clientId) {
     return { path, data: JSON.parse(readFileSync(path, 'utf8')) };
   } catch {
     console.error(`Client file not found: ${path}`);
-    console.error('Create one by copying clients/_template.json');
     process.exit(1);
   }
 }
 
-function saveToken(clientPath, clientData, tokenData, personUrn) {
-  const updated = {
-    ...clientData,
-    linkedin: {
-      accessToken: tokenData.access_token,
-      personUrn,
-      tokenExpiresAt: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-    },
+function saveTokenToEnv(clientId, tokenData, personUrn) {
+  const prefix = clientId.toUpperCase();
+  const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+  const vars = {
+    [`${prefix}_LINKEDIN_ACCESS_TOKEN`]: tokenData.access_token,
+    [`${prefix}_LINKEDIN_PERSON_URN`]: personUrn,
+    [`${prefix}_LINKEDIN_TOKEN_EXPIRES_AT`]: expiresAt,
   };
-  writeFileSync(clientPath, JSON.stringify(updated, null, 2));
+
+  const envPath = './.env';
+  let content = existsSync(envPath) ? readFileSync(envPath, 'utf8') : '';
+
+  for (const [key, value] of Object.entries(vars)) {
+    const line = `${key}=${value}`;
+    const regex = new RegExp(`^${key}=.*$`, 'm');
+    if (regex.test(content)) {
+      content = content.replace(regex, line);
+    } else {
+      content += `\n${line}`;
+    }
+  }
+
+  writeFileSync(envPath, content);
+  return expiresAt;
 }
 
 async function exchangeCode(code, { clientId, clientSecret, redirectUri }) {
@@ -158,13 +171,12 @@ async function main() {
         const tokenData = await exchangeCode(code, creds);
         const personUrn = await getPersonUrn(tokenData.access_token);
 
-        saveToken(clientPath, clientData, tokenData, personUrn);
-
-        const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+        const expiresAt = saveTokenToEnv(clientId, tokenData, personUrn);
+        const prefix = clientId.toUpperCase();
         console.log(`\n✓ Token saved for ${clientData.name}`);
         console.log(`  Person URN : ${personUrn}`);
-        console.log(`  Expires    : ${expiresAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`);
-        console.log(`  Saved to   : ${clientPath}`);
+        console.log(`  Expires    : ${new Date(expiresAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`);
+        console.log(`  Saved to   : .env (${prefix}_LINKEDIN_ACCESS_TOKEN)`);
         console.log(`\nReady. Run: npm run run -- --client ${clientId}`);
 
         resolve();
