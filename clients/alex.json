@@ -7,34 +7,34 @@
   "about": "Final-year student at IIM Ranchi. Built FloodReady Delhi — a 290-ward GIS flood prediction system, top 1,000 at India Innovates 2026 out of 25,000+ teams, presented at Bharat Mandapam. Freelance web developer (Provoke AI, Blast Learning, Unitech India). Active intraday equity and F&O trader on Dhan, files ITR-3. Wildlife and street photographer with 7+ years experience. Writes a LinkedIn series called 'The Notebook' — field notes from Jharkhand, conservation work, river cleanup. Passionate about civic tech, urban policy, and building real things.",
   "pillars": [
     {
-      "id": "civic-tech",
-      "label": "Civic Tech & Urban Policy",
-      "description": "FloodReady Delhi, GIS, 290-ward flood prediction, Yamuna river levels, public infrastructure gaps, urban flooding policy.",
-      "hashtags": ["#CivicTech", "#UrbanPolicy", "#GIS", "#FloodReady"]
+      "id": "ai-watch",
+      "label": "AI Watch",
+      "description": "Alex's take on AI news, new model releases, research drops — always from a builder's perspective, not a commentator's. The angle is always 'what does this actually change in practice.' He has been building solo with AI tools long enough to know what a new Claude or GPT release genuinely shifts in his workflow and what is marketing. That specificity is the edge. Never a summary, always a genuine opinion grounded in real usage.",
+      "hashtags": ["#AI", "#BuildingWithAI", "#TechTakes"]
     },
     {
-      "id": "building",
+      "id": "policy-and-power",
+      "label": "Policy & Power",
+      "description": "Public policy, governance frameworks, civic systems — where they work, where they fail, where nobody is paying attention. Could be AI regulation, urban policy, environmental governance, flood infrastructure, anything where a real decision is being made that affects real people. FloodReady Delhi gives him standing here that most students don't have. Not a policy explainer — a grounded opinion from someone who has tried to build something real inside broken systems.",
+      "hashtags": ["#PublicPolicy", "#CivicTech", "#UrbanPolicy"]
+    },
+    {
+      "id": "building-in-public",
       "label": "Building in Public",
-      "description": "Web development projects — Provoke AI (argument-based document reading app), Unitech India e-commerce site, Blast Learning edtech platform. Real problems, real constraints, honest lessons.",
+      "description": "Exactly what he is making, what broke, what he figured out. Provoke AI, Blast Learning, FloodReady, whatever comes next. Raw and specific — the actual process, not a polished product launch. Real stacks, real deployment problems, real clients. The audience is other builders and people who want to understand what solo building actually looks like. He knows what a Vercel timeout at 11pm feels like. Write from there.",
       "hashtags": ["#BuildingInPublic", "#WebDev", "#IndieHacker"]
     },
     {
       "id": "the-notebook",
       "label": "The Notebook",
-      "description": "Personal essays and field notes. Rasabeda SIIP fieldwork in Jharkhand, Subarnarekha river cleanup (500kg waste), conservation, wildlife photography observations.",
-      "hashtags": ["#TheNotebook", "#Conservation", "#FieldNotes"]
+      "description": "Personal writing. Philosophical, observational, field-note style. Rasabeda fieldwork in Jharkhand, the Subarnarekha river cleanup, guitar, wildlife photography, the texture of being a person who thinks about things. No agenda. This is the pillar that makes the rest of the account feel like a real person rather than a content machine. Benchmark tone is always the Rasabeda writing — plain, direct, human. Nothing performed.",
+      "hashtags": ["#TheNotebook", "#FieldNotes", "#Conservation"]
     },
     {
-      "id": "ai-tools",
-      "label": "AI & Enterprise",
-      "description": "AI adoption in India, gap between GenAI pilot intent and production deployment, honest takes on what actually works vs hype.",
-      "hashtags": ["#AI", "#EnterpriseAI", "#India"]
-    },
-    {
-      "id": "trading",
-      "label": "Trading & Markets",
-      "description": "Intraday equity, F&O observations. What you noticed in the market, not advice. Honest, specific, not advisory.",
-      "hashtags": ["#Trading", "#EquityMarkets"]
+      "id": "sharp-takes",
+      "label": "Sharp Takes",
+      "description": "Whatever Alex is actually thinking that week that doesn't fit anywhere else. An opinion he wants to put on record. Something that annoyed him. A question he can't stop thinking about. No fixed topic, no format rules. The only rule: it has to be a real take, not a safe one. Something he would say out loud and stand behind. This is where his most memorable posts will come from.",
+      "hashtags": ["#Opinion", "#TechTakes", "#SharpTakes"]
     }
   ],
   "postingSchedule": {
@@ -57,7 +57,6 @@
   ],
   "avoidTopics": [],
   "recentTopics": [
-    "Why FloodReady Delhi predicts flooding at the ward level instead of the city level, and what 290 wards taught me about granularity in public infrastructure data",
-    "How the Nifty 50 behaved in the final 30 minutes of Thursday's session and what the order flow told me about institutional positioning before Friday's expiry."
+    "Why FloodReady Delhi predicts flooding at the ward level instead of the city level, and what 290 wards taught me about granularity in public infrastructure data"
   ]
 }

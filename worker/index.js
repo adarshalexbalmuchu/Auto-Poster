@@ -33,11 +33,11 @@ const CLIENTS = {
   alex: {
     name: 'Alex',
     pillars: [
-      { id: 'civic-tech',   title: 'Civic Tech & Policy' },
-      { id: 'building',     title: 'Building in Public'  },
-      { id: 'the-notebook', title: 'The Notebook'        },
-      { id: 'ai-tools',     title: 'AI & Enterprise'     },
-      { id: 'trading',      title: 'Trading & Markets'   },
+      { id: 'ai-watch',          title: 'AI Watch'          },
+      { id: 'policy-and-power',  title: 'Policy & Power'    },
+      { id: 'building-in-public',title: 'Building in Public'},
+      { id: 'the-notebook',      title: 'The Notebook'      },
+      { id: 'sharp-takes',       title: 'Sharp Takes'       },
     ],
   },
 };
