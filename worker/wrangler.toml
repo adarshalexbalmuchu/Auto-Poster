@@ -4,6 +4,10 @@ compatibility_date = "2024-09-23"
 
 [vars]
 GITHUB_REPO = "adarshalexbalmuchu/Auto-Poster"
+DEBUG_SKIP_SIG = "true"
+
+[observability.logs]
+enabled = true
 
 [[kv_namespaces]]
 binding = "STATE"
