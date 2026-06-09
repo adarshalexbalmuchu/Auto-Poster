@@ -7,7 +7,7 @@ GITHUB_REPO = "adarshalexbalmuchu/Auto-Poster"
 
 [[kv_namespaces]]
 binding = "STATE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "7184454afd984de8b46e788fdf689a2a"
 
 # Secrets — set these via: wrangler secret put <NAME>
 # WHATSAPP_VERIFY_TOKEN
