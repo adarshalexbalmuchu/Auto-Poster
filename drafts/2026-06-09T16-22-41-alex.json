@@ -1,0 +1,17 @@
+{
+  "id": "2026-06-09T16-22-41-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-09T16:22:41.626Z",
+  "type": "text",
+  "topicData": {
+    "pillarId": "civic-tech",
+    "topic": "Bangalore",
+    "angle": "Bangalore",
+    "format": "text"
+  },
+  "postText": "Bangalore breaks your mental model about two weeks in.\n\nYou arrive thinking it is a tech city. Glass offices, product teams, scaling startups. That part is real. But then you spend a morning in Shivajinagar, or you follow a BBMP ward boundary on a map and try to find it on the ground, and something shifts.\n\nThe city is running three or four parallel logics at once. Formal planning documents that bear little relation to how streets actually get used. Informal water supply networks that predate the pipes. Neighbourhoods that feel like small towns that somehow got absorbed without being reorganised.\n\nMost civic tech work here treats this as a problem to fix. Clean the data. Standardise the schema. Make it legible.\n\nBut legibility is not the same as understanding. A ward boundary in a GIS layer tells you nothing about who actually negotiates access to that borewell, or why that particular junction floods every monsoon even though the drain looks fine on the infrastructure map.\n\nOver 12 million people live inside this system. Each of them has a working theory of how the city functions. Those theories, aggregated, are probably more accurate than any single dataset.\n\nThe harder question is not how to build better dashboards for Bangalore. It is whether your organisation is structured to learn from cities that do not fit the models you built them on.\n\n#CivicTech\n#UrbanPolicy\n#GIS",
+  "carouselData": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
