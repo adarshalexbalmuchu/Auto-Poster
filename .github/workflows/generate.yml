@@ -1,0 +1,62 @@
+name: Generate Post
+
+on:
+  schedule:
+    # 9:00 AM IST (UTC+5:30) = 3:30 AM UTC, Mon–Fri
+    - cron: '30 3 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      client:
+        description: 'Client ID'
+        default: 'alex'
+        required: false
+      pillar:
+        description: 'Pillar ID (leave blank for Claude to pick)'
+        required: false
+      format:
+        description: 'Format: text / list / story / notebook / carousel'
+        default: 'text'
+        required: false
+      seed:
+        description: 'Topic seed (leave blank for Claude to pick)'
+        required: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate post
+        env:
+          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
+          LINKEDIN_CLIENT_ID:          ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET:      ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          WHATSAPP_ACCESS_TOKEN:       ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:    ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+        run: |
+          CLIENT="${{ inputs.client || 'alex' }}"
+          ARGS="--client $CLIENT"
+          [ -n "${{ inputs.pillar }}" ] && ARGS="$ARGS --pillar ${{ inputs.pillar }}"
+          [ -n "${{ inputs.format }}" ] && ARGS="$ARGS --format ${{ inputs.format }}"
+          [ -n "${{ inputs.seed }}"   ] && ARGS="$ARGS --seed \"${{ inputs.seed }}\""
+          node src/run.js $ARGS
+
+      - name: Commit draft
+        run: |
+          git config user.name  "Auto-Poster Bot"
+          git config user.email "bot@auto-poster.local"
+          git add -f drafts/
+          git diff --staged --quiet || git commit -m "draft: $(date -u +%Y-%m-%dT%H:%M:%S)"
+          git push

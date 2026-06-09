@@ -1,0 +1,59 @@
+name: Post to LinkedIn
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft_path:
+        description: 'Draft file path (leave blank to post the latest pending draft)'
+        required: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Find latest draft
+        id: draft
+        run: |
+          if [ -n "${{ inputs.draft_path }}" ]; then
+            echo "path=${{ inputs.draft_path }}" >> $GITHUB_OUTPUT
+          else
+            LATEST=$(ls -t drafts/*.json 2>/dev/null | while read f; do
+              node -e "const d=JSON.parse(require('fs').readFileSync('$f')); if(!d.posted) { console.log('$f'); process.exit(0); }"
+            done | head -1)
+            if [ -z "$LATEST" ]; then
+              echo "No pending drafts found."
+              exit 1
+            fi
+            echo "path=$LATEST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post to LinkedIn
+        env:
+          LINKEDIN_CLIENT_ID:        ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET:    ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_ACCESS_TOKEN:     ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN:       ${{ secrets.LINKEDIN_PERSON_URN }}
+          LINKEDIN_TOKEN_EXPIRES_AT: ${{ secrets.LINKEDIN_TOKEN_EXPIRES_AT }}
+        run: node src/post.js --draft ${{ steps.draft.outputs.path }}
+
+      - name: Commit posted status
+        run: |
+          git config user.name  "Auto-Poster Bot"
+          git config user.email "bot@auto-poster.local"
+          git add -f drafts/
+          git diff --staged --quiet || git commit -m "posted: $(date -u +%Y-%m-%dT%H:%M:%S)"
+          git push
