@@ -9,6 +9,7 @@
  *
  * Environment variables (set via wrangler secret put or Cloudflare dashboard):
  *   WHATSAPP_VERIFY_TOKEN    — any random string, must match Meta webhook config
+ *   WHATSAPP_APP_SECRET      — Meta app secret (for X-Hub-Signature-256 verification)
  *   WHATSAPP_ACCESS_TOKEN    — Meta permanent token (to send reply messages)
  *   WHATSAPP_PHONE_NUMBER_ID — your WhatsApp Business phone number ID
  *   WHATSAPP_OWNER_NUMBER    — your personal WhatsApp number (E.164, e.g. 919876543210)
@@ -18,6 +19,18 @@
 
 const WA_API = 'https://graph.facebook.com/v20.0';
 const GH_API = 'https://api.github.com';
+
+async function verifySignature(request, secret) {
+  const signature = request.headers.get('x-hub-signature-256');
+  if (!signature) return false;
+  const body = await request.clone().arrayBuffer();
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, body);
+  const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return signature === expected;
+}
 
 export default {
   async fetch(request, env) {
@@ -37,6 +50,11 @@ export default {
 
     // ── Incoming message (POST) ─────────────────────────────────────────────
     if (request.method === 'POST') {
+      if (env.WHATSAPP_APP_SECRET) {
+        const valid = await verifySignature(request, env.WHATSAPP_APP_SECRET);
+        if (!valid) return new Response('Unauthorized', { status: 401 });
+      }
+
       let body;
       try {
         body = await request.json();

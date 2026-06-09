@@ -42,18 +42,25 @@ jobs:
 
       - name: Generate post
         env:
-          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
-          LINKEDIN_CLIENT_ID:          ${{ secrets.LINKEDIN_CLIENT_ID }}
-          LINKEDIN_CLIENT_SECRET:      ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-          WHATSAPP_ACCESS_TOKEN:       ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
-          WHATSAPP_PHONE_NUMBER_ID:    ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
-          WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          ANTHROPIC_API_KEY:                ${{ secrets.ANTHROPIC_API_KEY }}
+          IRFAN_LINKEDIN_ACCESS_TOKEN:      ${{ secrets.IRFAN_LINKEDIN_ACCESS_TOKEN }}
+          IRFAN_LINKEDIN_PERSON_URN:        ${{ secrets.IRFAN_LINKEDIN_PERSON_URN }}
+          IRFAN_LINKEDIN_TOKEN_EXPIRES_AT:  ${{ secrets.IRFAN_LINKEDIN_TOKEN_EXPIRES_AT }}
+          ALEX_LINKEDIN_ACCESS_TOKEN:       ${{ secrets.ALEX_LINKEDIN_ACCESS_TOKEN }}
+          ALEX_LINKEDIN_PERSON_URN:         ${{ secrets.ALEX_LINKEDIN_PERSON_URN }}
+          ALEX_LINKEDIN_TOKEN_EXPIRES_AT:   ${{ secrets.ALEX_LINKEDIN_TOKEN_EXPIRES_AT }}
+          WHATSAPP_ACCESS_TOKEN:            ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:         ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER:        ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          INPUT_CLIENT:                     ${{ inputs.client || 'irfan' }}
+          INPUT_PILLAR:                     ${{ inputs.pillar }}
+          INPUT_FORMAT:                     ${{ inputs.format }}
+          INPUT_SEED:                       ${{ inputs.seed }}
         run: |
-          CLIENT="${{ inputs.client || 'irfan' }}"
-          ARGS="--client $CLIENT"
-          [ -n "${{ inputs.pillar }}" ] && ARGS="$ARGS --pillar ${{ inputs.pillar }}"
-          [ -n "${{ inputs.format }}" ] && ARGS="$ARGS --format ${{ inputs.format }}"
-          [ -n "${{ inputs.seed }}"   ] && ARGS="$ARGS --seed \"${{ inputs.seed }}\""
+          ARGS="--client ${INPUT_CLIENT}"
+          [ -n "${INPUT_PILLAR}" ] && ARGS="$ARGS --pillar ${INPUT_PILLAR}"
+          [ -n "${INPUT_FORMAT}" ] && ARGS="$ARGS --format ${INPUT_FORMAT}"
+          [ -n "${INPUT_SEED}"   ] && ARGS="$ARGS --seed ${INPUT_SEED}"
           node src/run.js $ARGS
 
       - name: Commit draft
