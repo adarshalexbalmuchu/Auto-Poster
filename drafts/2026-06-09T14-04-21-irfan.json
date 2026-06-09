@@ -1,0 +1,17 @@
+{
+  "id": "2026-06-09T14-04-21-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-06-09T14:04:21.978Z",
+  "type": "text",
+  "topicData": {
+    "pillarId": "human-side-ai",
+    "topic": "Why AI adoption stalls when organisations measure adoption by tool deployment rates rather than by whether anyone is actually changing how decisions get made.",
+    "angle": "The metric organisations use to track AI rollout is itself the reason the rollout fails — counting licences activated and models deployed creates the illusion of progress while the real behaviour change never happens, and no one in the room is incentivised to say so.",
+    "format": "text"
+  },
+  "postText": "The board gets a slide. Licences activated: 847. Models deployed: 12. Adoption rate: 73%.\n\nNobody asks whether a single decision got made differently.\n\nI have sat in those rooms. The metrics feel like progress because they are measurable and the real thing is not. Behaviour change is slow, uncomfortable, and hard to put in a RAG status. So organisations measure what they can report rather than what actually matters.\n\nThe result is predictable. Tools get deployed. Workflows stay identical. People find polite workarounds. And when the transformation fails to materialise, the diagnosis is almost always \"change management\" as an afterthought rather than \"we measured the wrong thing from day one.\"\n\nGartner puts AI project failure rates above 80%. That number is not a technology problem. It is a metrics design problem dressed up as a capability gap.\n\nThe organisations I have seen get this right do not start with deployment targets. They start with a short list of decisions that should be made faster, with better information, by people who are genuinely accountable. Then they measure whether that is happening. Everything else is a vanity number.\n\nCounting licences activated is not an adoption strategy. It is a way of feeling like you are moving while standing still.\n\nThe leaders who will be trusted with more AI capability are the ones who are honest about the gap between tool access and actual behavioural change. That honesty is harder than a dashboard. It is also the only thing that makes the dashboard worth building.\n\nWhat is your organisation actually measuring right now, and does anyone in the room have the incentive to tell you the truth about it?\n\n#AILeadership\n#ChangeManagement\n#FutureOfWork",
+  "carouselData": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}

@@ -3,8 +3,11 @@ name: Post to LinkedIn
 on:
   workflow_dispatch:
     inputs:
+      client:
+        description: 'Client ID (irfan / alex — filters to their latest draft)'
+        required: false
       draft_path:
-        description: 'Draft file path (leave blank to post the latest pending draft)'
+        description: 'Exact draft file path (leave blank to auto-find latest)'
         required: false
 
 jobs:
@@ -25,15 +28,18 @@ jobs:
 
       - run: npm ci
 
-      - name: Find latest draft
+      - name: Find draft
         id: draft
         env:
+          INPUT_CLIENT:     ${{ inputs.client }}
           INPUT_DRAFT_PATH: ${{ inputs.draft_path }}
         run: |
           if [ -n "${INPUT_DRAFT_PATH}" ]; then
             echo "path=${INPUT_DRAFT_PATH}" >> $GITHUB_OUTPUT
           else
-            LATEST=$(ls -t drafts/*.json 2>/dev/null | while read f; do
+            PATTERN="drafts/*.json"
+            [ -n "${INPUT_CLIENT}" ] && PATTERN="drafts/*-${INPUT_CLIENT}.json"
+            LATEST=$(ls -t ${PATTERN} 2>/dev/null | while read f; do
               node -e "const d=JSON.parse(require('fs').readFileSync('$f')); if(!d.posted) { console.log('$f'); process.exit(0); }"
             done | head -1)
             if [ -z "$LATEST" ]; then

@@ -14,7 +14,7 @@
 import 'dotenv/config';
 import { generateForClient, saveDraft, recordTopic } from './generate.js';
 import { postDraft } from './post.js';
-import { sendWhatsApp, formatDraftMessage } from './whatsapp.js';
+import { sendDraftNotification } from './whatsapp.js';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -82,7 +82,7 @@ Options:
 
   if (!postImmediately && !dryRun) {
     try {
-      await sendWhatsApp(formatDraftMessage(result, filename));
+      await sendDraftNotification(result, filename);
       console.log('✓ WhatsApp notification sent');
     } catch (e) {
       console.log(`  WhatsApp error: ${e.message}`);

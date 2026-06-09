@@ -1,0 +1,17 @@
+{
+  "id": "2026-06-09T13-47-55-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-06-09T13:47:55.906Z",
+  "type": "text",
+  "topicData": {
+    "pillarId": "human-side-ai",
+    "topic": "Why AI rollouts stall not when employees resist the technology, but when middle managers quietly deprioritise it because their performance metrics still reward the old way of working.",
+    "angle": "The metric system is the real governance layer — no AI strategy survives a bonus structure that was designed before AI existed, and most organisations have not touched theirs.",
+    "format": "text"
+  },
+  "postText": "The AI pilot worked. The training was delivered. The tool was available to everyone.\n\nAnd then, quietly, nothing changed.\n\nI have sat in those rooms where the post-implementation review asks why adoption stalled. The answer is almost never resistance. It is almost never fear of technology. It is middle managers doing exactly what their organisations trained them to do. Hitting the numbers that their bonus depends on. The numbers designed in 2019.\n\nWhen speed of manual output is still what gets rewarded, AI-assisted thinking feels like a distraction. Not in theory. Not in a research paper. Right now. In your organisation, this quarter.\n\nGartner put AI implementation failure rates above 80 percent. Most post-mortems blame culture. I would argue they are misreading the autopsy. Culture follows incentive. If the incentive structure has not moved, the culture will not move either.\n\nThe metric system is the real governance layer. Every organisation I have seen try to run an AI strategy on top of an unchanged performance framework has eventually hit the same wall. The technology did not fail. The design of what gets rewarded failed.\n\nThis is not a technology problem. It is a leadership architecture problem. And it sits above the AI team, above the digital function, in the office of whoever owns how performance is defined and measured across the business.\n\nYou can have the best AI deployment in your sector. If your middle management tier is still being evaluated on throughput metrics built for a pre-AI world, you are not running an AI strategy. You are running an AI experiment on borrowed time.\n\nWhat does your organisation's performance framework actually reward right now, and has anyone with authority over it been inside your AI governance conversation?\n\n#AILeadership\n#ChangeManagement\n#FutureOfWork",
+  "carouselData": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}

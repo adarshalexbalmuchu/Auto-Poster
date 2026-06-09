@@ -5,9 +5,13 @@ compatibility_date = "2024-09-23"
 [vars]
 GITHUB_REPO = "adarshalexbalmuchu/Auto-Poster"
 
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
 # Secrets — set these via: wrangler secret put <NAME>
 # WHATSAPP_VERIFY_TOKEN
-# WHATSAPP_APP_SECRET      ← Meta app secret (Settings → Basic → App Secret)
+# WHATSAPP_APP_SECRET      — Meta app secret (Settings → Basic → App Secret)
 # WHATSAPP_ACCESS_TOKEN
 # WHATSAPP_PHONE_NUMBER_ID
 # WHATSAPP_OWNER_NUMBER
