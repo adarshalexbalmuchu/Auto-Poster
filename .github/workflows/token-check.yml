@@ -1,0 +1,33 @@
+name: Token Expiry Check
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Check token expiry
+        env:
+          IRFAN_LINKEDIN_TOKEN_EXPIRES_AT: ${{ secrets.IRFAN_LINKEDIN_TOKEN_EXPIRES_AT }}
+          ALEX_LINKEDIN_TOKEN_EXPIRES_AT:  ${{ secrets.ALEX_LINKEDIN_TOKEN_EXPIRES_AT }}
+          WHATSAPP_ACCESS_TOKEN:           ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:        ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER:       ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+        run: node src/check-tokens.js
