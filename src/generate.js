@@ -76,28 +76,32 @@ function buildPostPrompt(client, topicData) {
   const hashtags = pillar.hashtags.slice(0, 3).join(', ');
 
   const formatGuides = {
-    text: 'A direct text post. 150–350 words. Paragraph-based, personal.',
-    list: 'A numbered list post. Hook line, then 3–6 numbered points, then a close. 200–350 words.',
-    story: 'A short first-person story. One scene. What happened, what it meant. 150–300 words.',
-    notebook: 'A field-note style entry. Observational, earthy, specific. 150–350 words.',
+    text: 'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–350 words total.',
+    list: 'NO bullet points or numbered lists. Instead, use short punchy paragraphs to present each point as its own thought. 200–350 words.',
+    story: 'A first-person scene. Open with where you were or what you saw — not with "I". One moment, what it meant. 150–300 words.',
+    notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–350 words.',
   };
 
   const guide = formatGuides[topicData.format] || formatGuides.text;
 
   return `You are writing a LinkedIn post for ${client.name}.
 
-${client.name}'s voice:
+VOICE AND STYLE RULES — follow every one precisely:
 ${client.voice}
 
 Topic: ${topicData.topic}
 Angle / hook: ${topicData.angle}
-Format: ${guide}
+Format guidance: ${guide}
 
-Write the post exactly as it would appear on LinkedIn.
-- No preamble. No "here's a post:". Just the post.
-- Include 2–3 hashtags at the end on their own line (use some from: ${hashtags}).
-- Leave a blank line between the body and the hashtags.
-- Do NOT add any notes or explanation after.
+HARD RULES:
+- Do NOT open with "I" — open with an observation, a fact, or a scene.
+- Do NOT use em dashes (—). Use a period or a new sentence instead.
+- Do NOT use bullet points or numbered lists of any kind.
+- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".
+- ONE strong number maximum. Lead with the insight, use the number as proof.
+- End with ONE direct question aimed at "you" or "your organisation" — a leadership implication, never a product pitch.
+- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 from: ${hashtags}.
+- No preamble. No "here's a post:". Just the post itself.
 
 Write now:`;
 }
