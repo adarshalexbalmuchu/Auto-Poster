@@ -24,10 +24,10 @@ const CLIENTS = {
   irfan: {
     name: 'Irfan',
     pillars: [
-      { id: 'ai-enterprise-ops', title: 'AI & Enterprise Ops' },
-      { id: 'human-side-ai',     title: 'Human Side of AI'   },
-      { id: 'europe-asia-ai',    title: 'Europe vs Asia AI'  },
-      { id: 'future-enterprise', title: 'Future Enterprise'  },
+      { id: 'ai-at-work',    title: 'AI at Work'      },
+      { id: 'adoption-gap',  title: 'Adoption Gap'    },
+      { id: 'human-side-ai', title: 'Human Side of AI'},
+      { id: 'sharp-takes',   title: 'Sharp Takes'     },
     ],
   },
   alex: {
