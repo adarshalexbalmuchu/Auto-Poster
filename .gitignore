@@ -4,3 +4,4 @@ drafts/
 logs/
 output/
 *.log
+.env.save
