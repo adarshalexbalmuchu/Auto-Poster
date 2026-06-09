@@ -27,9 +27,11 @@ jobs:
 
       - name: Find latest draft
         id: draft
+        env:
+          INPUT_DRAFT_PATH: ${{ inputs.draft_path }}
         run: |
-          if [ -n "${{ inputs.draft_path }}" ]; then
-            echo "path=${{ inputs.draft_path }}" >> $GITHUB_OUTPUT
+          if [ -n "${INPUT_DRAFT_PATH}" ]; then
+            echo "path=${INPUT_DRAFT_PATH}" >> $GITHUB_OUTPUT
           else
             LATEST=$(ls -t drafts/*.json 2>/dev/null | while read f; do
               node -e "const d=JSON.parse(require('fs').readFileSync('$f')); if(!d.posted) { console.log('$f'); process.exit(0); }"
@@ -43,12 +45,14 @@ jobs:
 
       - name: Post to LinkedIn
         env:
-          LINKEDIN_CLIENT_ID:        ${{ secrets.LINKEDIN_CLIENT_ID }}
-          LINKEDIN_CLIENT_SECRET:    ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-          LINKEDIN_ACCESS_TOKEN:     ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_PERSON_URN:       ${{ secrets.LINKEDIN_PERSON_URN }}
-          LINKEDIN_TOKEN_EXPIRES_AT: ${{ secrets.LINKEDIN_TOKEN_EXPIRES_AT }}
-        run: node src/post.js --draft ${{ steps.draft.outputs.path }}
+          IRFAN_LINKEDIN_ACCESS_TOKEN:     ${{ secrets.IRFAN_LINKEDIN_ACCESS_TOKEN }}
+          IRFAN_LINKEDIN_PERSON_URN:       ${{ secrets.IRFAN_LINKEDIN_PERSON_URN }}
+          IRFAN_LINKEDIN_TOKEN_EXPIRES_AT: ${{ secrets.IRFAN_LINKEDIN_TOKEN_EXPIRES_AT }}
+          ALEX_LINKEDIN_ACCESS_TOKEN:      ${{ secrets.ALEX_LINKEDIN_ACCESS_TOKEN }}
+          ALEX_LINKEDIN_PERSON_URN:        ${{ secrets.ALEX_LINKEDIN_PERSON_URN }}
+          ALEX_LINKEDIN_TOKEN_EXPIRES_AT:  ${{ secrets.ALEX_LINKEDIN_TOKEN_EXPIRES_AT }}
+          INPUT_DRAFT_PATH:                ${{ steps.draft.outputs.path }}
+        run: node src/post.js --draft "${INPUT_DRAFT_PATH}"
 
       - name: Commit posted status
         run: |
