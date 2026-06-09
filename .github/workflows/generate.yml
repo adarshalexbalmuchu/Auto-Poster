@@ -23,6 +23,9 @@ on:
       seed:
         description: 'Topic seed (leave blank for Claude to pick)'
         required: false
+      phone:
+        description: 'WhatsApp phone number to notify (E.164, no +)'
+        required: false
 
 permissions: {}
 
@@ -54,10 +57,13 @@ jobs:
           WHATSAPP_ACCESS_TOKEN:            ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
           WHATSAPP_PHONE_NUMBER_ID:         ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
           WHATSAPP_RECIPIENT_NUMBER:        ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          WORKER_URL:                       ${{ secrets.WORKER_URL }}
+          WORKER_CALLBACK_SECRET:           ${{ secrets.WORKER_CALLBACK_SECRET }}
           INPUT_CLIENT:                     ${{ inputs.client || 'irfan' }}
           INPUT_PILLAR:                     ${{ inputs.pillar }}
           INPUT_FORMAT:                     ${{ inputs.format }}
           INPUT_SEED:                       ${{ inputs.seed }}
+          INPUT_PHONE:                      ${{ inputs.phone }}
         run: node src/run.js
 
       - name: Commit draft

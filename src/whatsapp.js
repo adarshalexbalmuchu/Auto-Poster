@@ -122,7 +122,7 @@ export async function sendDraftNotification(result, draftFilename) {
   }
 
   await sendButtons(phoneNumberId, token, to,
-    'What would you like to do?',
+    'What would you like to do?\n\nTo refine, reply *edit: [your instruction]*\ne.g. _edit: sharpen the hook_',
     [
       { id: 'action_post',       title: '✅ Post it'    },
       { id: 'action_skip',       title: '❌ Skip'       },

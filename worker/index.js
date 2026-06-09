@@ -12,6 +12,7 @@
  *   WHATSAPP_OWNER_NUMBER    — your personal WhatsApp number (E.164, no +)
  *   GITHUB_TOKEN             — GitHub PAT with actions:write scope
  *   GITHUB_REPO              — e.g. adarshalexbalmuchu/Auto-Poster
+ *   WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
  *
  * KV namespace binding (wrangler.toml):
  *   STATE — stores conversation state per user (1 hour TTL)
@@ -82,6 +83,29 @@ async function clearState(env, from) {
   await env.STATE.delete(`state:${from}`);
 }
 
+// ── Internal callback handler (from GitHub Actions) ────────────────────────
+
+async function handleCallback(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  if (!timingSafeEqual(auth, `Bearer ${env.WORKER_CALLBACK_SECRET}`)) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  let body;
+  try { body = await request.json(); } catch { return new Response('Bad Request', { status: 400 }); }
+
+  if (body.type === 'draft_ready' && body.phone && body.client) {
+    const cur = await getState(env, body.phone);
+    await setState(env, body.phone, {
+      ...cur,
+      step: 'pending_review',
+      client: body.client,
+      pillar: body.pillar || cur.pillar || null,
+      draftPath: body.draftPath || cur.draftPath || null,
+    });
+  }
+  return new Response('OK', { status: 200 });
+}
+
 // ── Main handler ────────────────────────────────────────────────────────────
 
 export default {
@@ -96,6 +120,13 @@ export default {
         return new Response(challenge, { status: 200 });
       }
       return new Response('Forbidden', { status: 403 });
+    }
+
+    if (request.method === 'POST' && url.pathname === '/callback') {
+      if (!env.WORKER_CALLBACK_SECRET) {
+        return new Response('Service Unavailable', { status: 503 });
+      }
+      return handleCallback(request, env);
     }
 
     if (request.method === 'POST') {
@@ -181,12 +212,31 @@ async function handleText(env, from, text) {
     return;
   }
 
+  if (lower.startsWith('edit:')) {
+    const instruction = text.slice(5).trim();
+    if (!instruction) {
+      await sendText(env, from, 'Please include an instruction.\n\nExample: *edit: make it shorter*');
+      return;
+    }
+    const noActiveDraft = !state.client ||
+      ['idle', 'awaiting_client', 'awaiting_pillar', 'awaiting_seed'].includes(state.step);
+    if (noActiveDraft) {
+      await sendText(env, from, 'No active draft to edit.\n\nReply *new post* to generate one first.');
+      return;
+    }
+    await sendText(env, from,
+      `✏️ Applying edit...\n\n_"${instruction.length > 80 ? instruction.slice(0, 80) + '…' : instruction}"_\n\nYou'll receive the revised draft shortly.`
+    );
+    await triggerEdit(env, from, state, instruction);
+    return;
+  }
+
   if (state.step === 'awaiting_seed') {
     const seed = lower === 'none' ? null : text;
     const newState = { ...state, seed, step: 'generating' };
     await setState(env, from, newState);
     await sendText(env, from, `⏳ Generating post for *${CLIENTS[state.client]?.name || state.client}*...\n\nYou'll receive a preview shortly.`);
-    await triggerGenerate(env, state.client, state.pillar, null, seed);
+    await triggerGenerate(env, state.client, state.pillar, null, seed, from);
     return;
   }
 
@@ -222,7 +272,7 @@ async function handleButtonReply(env, from, id) {
 async function doPost(env, from, state) {
   await clearState(env, from);
   await sendText(env, from, '✅ Posting to LinkedIn now...\n\nCheck your profile in ~30 seconds.');
-  await triggerPost(env, state.client || null);
+  await triggerPost(env, state.client || null, state.draftPath || null);
 }
 
 async function doRegenerate(env, from, state) {
@@ -232,7 +282,7 @@ async function doRegenerate(env, from, state) {
   }
   await setState(env, from, { ...state, step: 'generating' });
   await sendText(env, from, '🔄 Regenerating... you\'ll receive a new preview shortly.');
-  await triggerGenerate(env, state.client, state.pillar, null, state.seed);
+  await triggerGenerate(env, state.client, state.pillar, null, state.seed, from);
 }
 
 // ── Interactive message senders ─────────────────────────────────────────────
@@ -260,6 +310,9 @@ async function sendHelp(env, from) {
     `• *post* — publish latest draft to LinkedIn\n` +
     `• *skip* — discard latest draft\n` +
     `• *regenerate* — rewrite with same topic\n` +
+    `• *edit: [instruction]* — refine current draft\n` +
+    `  e.g. _edit: sharpen the opening hook_\n` +
+    `  e.g. _edit: make it shorter_\n` +
     `• *status* — check bot status\n` +
     `• *help* — show this menu`
   );
@@ -306,18 +359,31 @@ async function waPost(env, payload) {
 
 // ── GitHub Actions triggers ─────────────────────────────────────────────────
 
-async function triggerGenerate(env, client, pillar, format, seed) {
+async function triggerGenerate(env, client, pillar, format, seed, phone) {
   const inputs = { client: client || 'irfan' };
   if (pillar) inputs.pillar = pillar;
   if (format) inputs.format = format;
   if (seed)   inputs.seed   = seed;
+  if (phone)  inputs.phone  = phone;
   await ghDispatch(env, 'generate.yml', inputs);
 }
 
-async function triggerPost(env, client) {
+async function triggerPost(env, client, draftPath) {
   const inputs = {};
-  if (client) inputs.client = client;
+  if (client)    inputs.client     = client;
+  if (draftPath) inputs.draft_path = draftPath;
   await ghDispatch(env, 'post.yml', inputs);
+}
+
+async function triggerEdit(env, from, state, instruction) {
+  const inputs = {
+    instruction,
+    client: state.client,
+    phone: from,
+  };
+  if (state.pillar)    inputs.pillar     = state.pillar;
+  if (state.draftPath) inputs.draft_path = state.draftPath;
+  await ghDispatch(env, 'edit.yml', inputs);
 }
 
 async function ghDispatch(env, workflow, inputs) {
