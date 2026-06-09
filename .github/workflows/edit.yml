@@ -1,0 +1,63 @@
+name: Edit Draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      instruction:
+        description: 'Edit instruction (e.g. "make it shorter", "sharpen the hook")'
+        required: true
+      client:
+        description: 'Client ID (irfan / alex)'
+        required: true
+      pillar:
+        description: 'Pillar ID (context only)'
+        required: false
+      phone:
+        description: 'WhatsApp phone number to notify (E.164, no +)'
+        required: false
+      draft_path:
+        description: 'Specific draft file path (leave blank to auto-find latest unposted)'
+        required: false
+
+permissions: {}
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Apply edit
+        env:
+          ANTHROPIC_API_KEY:         ${{ secrets.ANTHROPIC_API_KEY }}
+          WHATSAPP_ACCESS_TOKEN:     ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:  ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER: ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          WORKER_URL:                ${{ secrets.WORKER_URL }}
+          WORKER_CALLBACK_SECRET:    ${{ secrets.WORKER_CALLBACK_SECRET }}
+          INPUT_CLIENT:              ${{ inputs.client }}
+          INPUT_INSTRUCTION:         ${{ inputs.instruction }}
+          INPUT_PILLAR:              ${{ inputs.pillar }}
+          INPUT_PHONE:               ${{ inputs.phone }}
+          INPUT_DRAFT_PATH:          ${{ inputs.draft_path }}
+        run: node src/edit.js
+
+      - name: Commit revised draft
+        run: |
+          set -e
+          git config user.name  "Auto-Poster Bot"
+          git config user.email "bot@auto-poster.local"
+          git add -f drafts/
+          git diff --staged --quiet || (git pull --rebase origin main && git commit -m "edit: $(date -u +%Y-%m-%dT%H:%M:%S) [${{ inputs.client }}]" && git push)

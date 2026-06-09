@@ -92,6 +92,35 @@ Options:
     } catch (e) {
       console.log(`  WhatsApp error: ${e.message}`);
     }
+
+    // Callback to Worker → transition KV state to pending_review with draft path.
+    // Only fires when triggered by the WhatsApp bot (WORKER_URL + secret + phone all set).
+    const workerUrl      = process.env.WORKER_URL;
+    const callbackSecret = process.env.WORKER_CALLBACK_SECRET;
+    const phone          = process.env.INPUT_PHONE;
+    if (workerUrl && callbackSecret && phone) {
+      try {
+        await fetch(`${workerUrl}/callback`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${callbackSecret}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'auto-poster-worker/1.0',
+          },
+          body: JSON.stringify({
+            type: 'draft_ready',
+            phone,
+            client: clientId,
+            pillar: result.topicData.pillarId,
+            draftPath: filename,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        console.log('✓ Worker KV updated');
+      } catch (e) {
+        console.warn(`Worker callback skipped: ${e.message}`);
+      }
+    }
   }
 
   if (postImmediately || dryRun) {
