@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const anthropic = new Anthropic();
 
-const MODEL = 'claude-opus-4-8';
+const MODEL = 'claude-sonnet-4-6';
 
 // ─── Load client ──────────────────────────────────────────────────────────────
 
@@ -39,14 +39,23 @@ function buildTopicPrompt(client, pillarId = null) {
     ? `\nRecently posted (avoid repeating):\n${client.recentTopics.slice(-10).map(t => `- ${t}`).join('\n')}`
     : '';
 
+  const avoidList = client.avoidTopics?.length
+    ? `\nTopics to avoid:\n${client.avoidTopics.map(t => `- ${t}`).join('\n')}`
+    : '';
+
+  const audienceNote = client.audienceNotes
+    ? `\nAudience: ${client.audienceNotes}`
+    : '';
+
   return `You are a content strategist for ${client.name}.
 
 About ${client.name}:
 ${client.about}
+${audienceNote}
 
 Content pillars:
 ${pillars.map(p => `- ${p.label}: ${p.description}`).join('\n')}
-${recentList}
+${recentList}${avoidList}
 
 Pick ONE specific, interesting topic for a LinkedIn post today.
 Choose something timely, specific, and authentic — not generic advice.
@@ -56,7 +65,7 @@ Return ONLY valid JSON (no markdown, no explanation):
   "pillarId": "<pillar id>",
   "topic": "<one sentence describing the specific topic>",
   "angle": "<the specific hook or angle that makes this interesting>",
-  "format": "<one of: text, list, story, notebook>"
+  "format": "<one of: ${(client.formats || ['text', 'list', 'story']).join(', ')}>"
 }`;
 }
 

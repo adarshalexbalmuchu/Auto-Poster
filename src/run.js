@@ -14,6 +14,7 @@
 import 'dotenv/config';
 import { generateForClient, saveDraft, recordTopic } from './generate.js';
 import { postDraft } from './post.js';
+import { sendWhatsApp, formatDraftMessage } from './whatsapp.js';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -78,6 +79,15 @@ Options:
   const { filename, draft } = saveDraft(clientId, result);
   recordTopic(clientId, result.topicData.topic);
   console.log(`\n✓ Draft saved: ${filename}`);
+
+  if (!postImmediately && !dryRun) {
+    try {
+      await sendWhatsApp(formatDraftMessage(result, filename));
+      console.log('✓ WhatsApp notification sent');
+    } catch (e) {
+      console.log(`  WhatsApp skipped: ${e.message}`);
+    }
+  }
 
   if (postImmediately || dryRun) {
     console.log(dryRun ? '\n[Dry run mode]' : '\nPosting to LinkedIn...');

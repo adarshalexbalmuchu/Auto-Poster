@@ -80,15 +80,28 @@ async function runAllClients() {
   log('Done.');
 }
 
-function buildCronExpression(timeIST) {
-  const [hours, minutes] = timeIST.split(':').map(Number);
-  const istOffsetHours = 5;
-  const istOffsetMinutes = 30;
-  let utcHours = hours - istOffsetHours;
-  let utcMinutes = minutes - istOffsetMinutes;
+const TZ_OFFSETS = {
+  'Asia/Kolkata':   { h: 5,  m: 30 },
+  'Europe/London':  { h: 1,  m: 0  },  // BST (summer); GMT offset handled by node-cron timezone
+  'America/New_York': { h: -4, m: 0 },
+  'Asia/Singapore': { h: 8,  m: 0  },
+};
+
+function buildCronExpression(timeStr, timezone = 'Asia/Kolkata') {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const offset = TZ_OFFSETS[timezone] || TZ_OFFSETS['Asia/Kolkata'];
+  let utcHours   = hours   - offset.h;
+  let utcMinutes = minutes - offset.m;
   if (utcMinutes < 0) { utcMinutes += 60; utcHours -= 1; }
-  if (utcHours < 0) utcHours += 24;
-  return `${utcMinutes} ${utcHours} * * 1-5`;
+  if (utcHours < 0)  utcHours += 24;
+  if (utcHours >= 24) utcHours -= 24;
+  return `${utcMinutes} ${utcHours} * * *`;
+}
+
+function getDaysExpression(days) {
+  const map = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+  if (!days?.length) return '1-5';
+  return days.map(d => map[d] ?? d).join(',');
 }
 
 function scheduleClients() {
@@ -101,22 +114,31 @@ function scheduleClients() {
   const scheduled = new Set();
 
   for (const client of clients) {
-    const timeIST = client.postingSchedule?.timeIST || '09:00';
-    const key = timeIST;
+    const schedule  = client.postingSchedule || {};
+    const timeStr   = schedule.timeUK || schedule.timeIST || '09:00';
+    const timezone  = schedule.timezone || 'Asia/Kolkata';
+    const key       = `${timeStr}-${timezone}`;
 
     if (scheduled.has(key)) continue;
     scheduled.add(key);
 
-    const expr = buildCronExpression(timeIST);
-    log(`Scheduling at ${timeIST} IST (cron: ${expr}) for ${clients.filter(c => c.postingSchedule?.timeIST === timeIST).map(c => c.id).join(', ')}`);
+    const expr = buildCronExpression(timeStr, timezone);
+    const matchClients = clients.filter(c => {
+      const s = c.postingSchedule || {};
+      return (s.timeUK || s.timeIST || '09:00') === timeStr && (s.timezone || 'Asia/Kolkata') === timezone;
+    });
+    log(`Scheduling at ${timeStr} ${timezone} (cron: ${expr}) for: ${matchClients.map(c => c.id).join(', ')}`);
 
     cron.schedule(expr, () => {
-      const currentClients = getActiveClients().filter(
-        c => c.postingSchedule?.timeIST === timeIST
-      );
-      for (const c of currentClients) {
-        runForClient(c);
-      }
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: timezone });
+      const current = getActiveClients().filter(c => {
+        const s = c.postingSchedule || {};
+        const t = s.timeUK || s.timeIST || '09:00';
+        const tz = s.timezone || 'Asia/Kolkata';
+        const days = s.days || ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+        return t === timeStr && tz === timezone && days.includes(today);
+      });
+      for (const c of current) runForClient(c);
     }, { timezone: 'UTC' });
   }
 

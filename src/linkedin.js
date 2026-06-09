@@ -11,10 +11,17 @@ const LINKEDIN_API_V2 = 'https://api.linkedin.com/v2';
 const LINKEDIN_REST = 'https://api.linkedin.com/rest';
 
 export function isTokenValid(client) {
-  if (!client.linkedin?.accessToken) return false;
-  if (!client.linkedin?.tokenExpiresAt) return false;
-  const expiresAt = new Date(client.linkedin.tokenExpiresAt);
-  return expiresAt > new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const token = process.env.LINKEDIN_ACCESS_TOKEN || client.linkedin?.accessToken;
+  if (!token) return false;
+  const expiresAt = process.env.LINKEDIN_TOKEN_EXPIRES_AT || client.linkedin?.tokenExpiresAt;
+  if (!expiresAt) return !!token;
+  return new Date(expiresAt) > new Date(Date.now() + 24 * 60 * 60 * 1000);
+}
+
+function getCredentials(client) {
+  const accessToken = process.env.LINKEDIN_ACCESS_TOKEN || client.linkedin?.accessToken;
+  const personUrn   = process.env.LINKEDIN_PERSON_URN   || client.linkedin?.personUrn;
+  return { accessToken, personUrn };
 }
 
 function authHeaders(token) {
@@ -26,13 +33,14 @@ function authHeaders(token) {
 }
 
 function requireToken(client) {
-  if (!isTokenValid(client)) {
+  const { accessToken, personUrn } = getCredentials(client);
+  if (!accessToken || !personUrn) {
     throw new Error(
-      `LinkedIn token for ${client.name} is expired or missing. ` +
+      `LinkedIn credentials missing for ${client.name}. ` +
       `Run: npm run auth -- --client ${client.id}`
     );
   }
-  return client.linkedin.accessToken;
+  return accessToken;
 }
 
 async function apiPost(url, token, body, extraHeaders = {}) {
@@ -53,7 +61,7 @@ async function apiPost(url, token, body, extraHeaders = {}) {
 
 export async function postText(client, text) {
   const token = requireToken(client);
-  const { personUrn } = client.linkedin;
+  const { personUrn } = getCredentials(client);
 
   const payload = {
     author: personUrn,
@@ -76,7 +84,7 @@ export async function postText(client, text) {
 
 export async function registerImageUpload(client) {
   const token = requireToken(client);
-  const { personUrn } = client.linkedin;
+  const { personUrn } = getCredentials(client);
 
   const payload = {
     registerUploadRequest: {
@@ -113,7 +121,7 @@ export async function uploadBinary(uploadUrl, buffer, token, contentType = 'imag
 
 export async function postWithImage(client, text, imageBuffer, contentType = 'image/png') {
   const token = requireToken(client);
-  const { personUrn } = client.linkedin;
+  const { personUrn } = getCredentials(client);
 
   const { uploadUrl, asset } = await registerImageUpload(client);
   await uploadBinary(uploadUrl, imageBuffer, token, contentType);
@@ -145,7 +153,7 @@ export async function postWithImage(client, text, imageBuffer, contentType = 'im
 
 export async function initDocumentUpload(client) {
   const token = requireToken(client);
-  const { personUrn } = client.linkedin;
+  const { personUrn } = getCredentials(client);
 
   const res = await fetch(`${LINKEDIN_REST}/documents`, {
     method: 'POST',
@@ -172,7 +180,7 @@ export async function initDocumentUpload(client) {
 
 export async function postDocument(client, text, documentUrn, title) {
   const token = requireToken(client);
-  const { personUrn } = client.linkedin;
+  const { personUrn } = getCredentials(client);
 
   const payload = {
     author: personUrn,

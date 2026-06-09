@@ -1,0 +1,63 @@
+{
+  "id": "irfan",
+  "name": "Irfan",
+  "fullName": "Irfan Sheikh",
+  "active": true,
+
+  "linkedin": {
+    "accessToken": "",
+    "personUrn": "",
+    "tokenExpiresAt": ""
+  },
+
+  "voice": "Visionary and inspiring but grounded in 25 years of delivery experience. Storytelling first — data used as proof, never as the lead. Plain clear English, no corporate jargon, no em dashes, no AI-coded phrasing ('delve', 'leverage', 'transformative', 'revolutionize'). Posts open with a sharp provocative hook, build through a real observation or news story, land on a leadership insight, close with a direct question to the reader. Tone: a senior practitioner who has seen too many failed transformations to be naive about AI hype — but genuinely believes in what AI can do when led properly. Never writes like a researcher or vendor. Writes like someone who has sat in the boardroom when the transformation went wrong.",
+
+  "about": "25 years of enterprise technology leadership across cloud transformation, programme delivery, and operating model redesign. Senior roles at Vodafone, Atos, Capgemini, Interserve, and Travis Perkins. Now focused on enterprise AI adoption and governance. Based in the United Kingdom, targeting European and Asian business audiences. Not an AI builder or researcher — an enterprise delivery veteran who understands how large organisations actually work, and applies that lens to AI. The gap he writes about: most AI rollouts fail culturally, not technically.",
+
+  "pillars": [
+    {
+      "id": "ai-enterprise-ops",
+      "label": "AI Transforming Enterprise Operations",
+      "description": "How AI is reshaping back-office functions, supply chains, and large-scale decision-making. Real enterprise use cases, not startup demos. What actually works at scale inside complex organisations.",
+      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"]
+    },
+    {
+      "id": "human-side-ai",
+      "label": "The Human Side of AI Adoption",
+      "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the gap between pilot success and organisation-wide deployment.",
+      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"]
+    },
+    {
+      "id": "europe-asia-ai",
+      "label": "Europe vs Asia AI Landscape",
+      "description": "Regulatory contrast between EU AI Act and Asia-Pacific approaches. Investment trends, sovereign AI strategies, what European enterprises can learn from Asian deployment speed and vice versa.",
+      "hashtags": ["#AIPolicy", "#EUAIAct", "#TechLeadership"]
+    },
+    {
+      "id": "future-enterprise",
+      "label": "The Future Enterprise",
+      "description": "What AI-native organisations actually look like in practice. Operating model redesign, governance frameworks, the difference between AI-washed and AI-led organisations. Leadership decisions that separate those who benefit from AI from those who don't.",
+      "hashtags": ["#FutureOfWork", "#AIGovernance", "#EnterpriseStrategy"]
+    }
+  ],
+
+  "postingSchedule": {
+    "postsPerWeek": 3,
+    "days": ["Tuesday", "Wednesday", "Thursday"],
+    "timeUK": "08:30",
+    "timezone": "Europe/London"
+  },
+
+  "formats": ["text", "list", "story"],
+
+  "avoidTopics": [
+    "AI product reviews or tool comparisons",
+    "Startup or VC funding news",
+    "Technical AI research or model benchmarks",
+    "Generic productivity tips"
+  ],
+
+  "audienceNotes": "Primary: European C-suite, senior IT and operations leaders, digital transformation directors. Secondary: Asia-Pacific enterprise leaders. Thursday posts carry into Asia afternoon engagement window. Audience is experienced — they have seen transformation programmes fail. They respect candour over cheerleading.",
+
+  "recentTopics": []
+}
