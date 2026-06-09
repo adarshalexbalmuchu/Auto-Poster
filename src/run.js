@@ -18,7 +18,12 @@ import { sendDraftNotification } from './whatsapp.js';
 
 async function main() {
   const args = process.argv.slice(2);
-  let clientId = null, pillarId = null, seed = null, format = null;
+  // GitHub Actions passes inputs as INPUT_* env vars to avoid shell injection.
+  // CLI args take priority when running locally.
+  let clientId = process.env.INPUT_CLIENT || null;
+  let pillarId = process.env.INPUT_PILLAR || null;
+  let seed     = process.env.INPUT_SEED   || null;
+  let format   = process.env.INPUT_FORMAT || null;
   let postImmediately = false;
   let dryRun = false;
 

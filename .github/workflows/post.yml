@@ -10,6 +10,8 @@ on:
         description: 'Exact draft file path (leave blank to auto-find latest)'
         required: false
 
+permissions: {}
+
 jobs:
   post:
     runs-on: ubuntu-latest
@@ -34,13 +36,14 @@ jobs:
           INPUT_CLIENT:     ${{ inputs.client }}
           INPUT_DRAFT_PATH: ${{ inputs.draft_path }}
         run: |
+          set -e
           if [ -n "${INPUT_DRAFT_PATH}" ]; then
             echo "path=${INPUT_DRAFT_PATH}" >> $GITHUB_OUTPUT
           else
             PATTERN="drafts/*.json"
             [ -n "${INPUT_CLIENT}" ] && PATTERN="drafts/*-${INPUT_CLIENT}.json"
-            LATEST=$(ls -t ${PATTERN} 2>/dev/null | while read f; do
-              node -e "const d=JSON.parse(require('fs').readFileSync('$f')); if(!d.posted) { console.log('$f'); process.exit(0); }"
+            LATEST=$(ls -t ${PATTERN} 2>/dev/null | while IFS= read -r f; do
+              node -e "const d=JSON.parse(require('fs').readFileSync(process.argv[1])); if(!d.posted){console.log(process.argv[1]);process.exit(0);}" "$f"
             done | head -1)
             if [ -z "$LATEST" ]; then
               echo "No pending drafts found."
@@ -62,8 +65,8 @@ jobs:
 
       - name: Commit posted status
         run: |
+          set -e
           git config user.name  "Auto-Poster Bot"
           git config user.email "bot@auto-poster.local"
           git add -f drafts/
-          git diff --staged --quiet || git commit -m "posted: $(date -u +%Y-%m-%dT%H:%M:%S)"
-          git push
+          git diff --staged --quiet || (git pull --rebase origin main && git commit -m "posted: $(date -u +%Y-%m-%dT%H:%M:%S)" && git push)

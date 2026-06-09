@@ -44,16 +44,27 @@ const CLIENTS = {
 
 // ── Signature verification ──────────────────────────────────────────────────
 
+function timingSafeEqual(a, b) {
+  const ea = new TextEncoder().encode(a);
+  const eb = new TextEncoder().encode(b);
+  if (ea.length !== eb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ea.length; i++) diff |= ea[i] ^ eb[i];
+  return diff === 0;
+}
+
 async function verifySignature(request, secret) {
   const signature = request.headers.get('x-hub-signature-256');
   if (!signature) return false;
+  const ts = parseInt(request.headers.get('x-hub-timestamp') || '0', 10);
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
   const body = await request.clone().arrayBuffer();
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   const mac = await crypto.subtle.sign('HMAC', key, body);
   const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return signature === expected;
+  return timingSafeEqual(signature, expected);
 }
 
 // ── State management (Cloudflare KV) ───────────────────────────────────────
@@ -88,9 +99,16 @@ export default {
     }
 
     if (request.method === 'POST') {
-      if (env.WHATSAPP_APP_SECRET) {
-        const valid = await verifySignature(request, env.WHATSAPP_APP_SECRET);
-        if (!valid) return new Response('Unauthorized', { status: 401 });
+      if (!env.WHATSAPP_APP_SECRET) {
+        console.error('WHATSAPP_APP_SECRET not configured');
+        return new Response('Service Unavailable', { status: 503 });
+      }
+      const valid = await verifySignature(request, env.WHATSAPP_APP_SECRET);
+      if (!valid) return new Response('Unauthorized', { status: 401 });
+
+      if (!env.WHATSAPP_OWNER_NUMBER) {
+        console.error('WHATSAPP_OWNER_NUMBER not configured');
+        return new Response('Service Unavailable', { status: 503 });
       }
 
       let body;
@@ -100,7 +118,7 @@ export default {
       if (!message) return new Response('OK', { status: 200 });
 
       const from = message.from;
-      if (env.WHATSAPP_OWNER_NUMBER && from !== env.WHATSAPP_OWNER_NUMBER) {
+      if (from !== env.WHATSAPP_OWNER_NUMBER) {
         return new Response('OK', { status: 200 });
       }
 
@@ -113,7 +131,8 @@ export default {
           await handleText(env, from, text);
         }
       } catch (e) {
-        await sendText(env, from, `⚠️ Error: ${e.message}`);
+        console.error('[worker] Error:', e.message);
+        await sendText(env, from, '⚠️ Something went wrong. Try again or reply *help*.');
       }
 
       return new Response('OK', { status: 200 });
@@ -277,6 +296,7 @@ async function waPost(env, payload) {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -312,6 +332,7 @@ async function ghDispatch(env, workflow, inputs) {
       'X-GitHub-Api-Version': '2022-11-28',
     },
     body: JSON.stringify({ ref: 'main', inputs }),
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
