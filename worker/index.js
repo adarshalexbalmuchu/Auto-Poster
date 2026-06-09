@@ -147,6 +147,7 @@ export default {
       if (!message) return new Response('OK', { status: 200 });
 
       const from = message.from;
+      console.log(`[debug] from=${from} owner=${env.WHATSAPP_OWNER_NUMBER} match=${from === env.WHATSAPP_OWNER_NUMBER}`);
       if (from !== env.WHATSAPP_OWNER_NUMBER) {
         return new Response('OK', { status: 200 });
       }
