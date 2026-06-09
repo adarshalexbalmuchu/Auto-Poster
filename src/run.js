@@ -104,10 +104,8 @@ Options:
       process.exit(1);
     }
   } else {
-    console.log('\nTo post this draft:');
+    console.log('\nTo post this draft manually:');
     console.log(`  npm run post -- --draft ${filename}`);
-    console.log('\nOr open the dashboard to review and post:');
-    console.log('  npm run dashboard');
   }
 }
 
