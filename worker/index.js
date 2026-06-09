@@ -56,14 +56,16 @@ function timingSafeEqual(a, b) {
 
 async function verifySignature(request, secret) {
   const signature = request.headers.get('x-hub-signature-256');
-  if (!signature) return false;
+  if (!signature) { console.log('[sig] no x-hub-signature-256 header'); return false; }
   const body = await request.clone().arrayBuffer();
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   const mac = await crypto.subtle.sign('HMAC', key, body);
   const expected = 'sha256=' + Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return timingSafeEqual(signature, expected);
+  const match = timingSafeEqual(signature, expected);
+  console.log(`[sig] match=${match} recv=${signature.slice(7, 15)} calc=${expected.slice(7, 15)} secretLen=${secret.length}`);
+  return match;
 }
 
 // ── State management (Cloudflare KV) ───────────────────────────────────────
