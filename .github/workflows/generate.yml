@@ -2,13 +2,16 @@ name: Generate Post
 
 on:
   schedule:
-    # 9:00 AM IST (UTC+5:30) = 3:30 AM UTC, Mon–Fri
-    - cron: '30 3 * * 1-5'
+    # 8:30 AM UK time (UTC+1 BST / UTC+0 GMT)
+    # BST (Mar–Oct): 8:30 BST = 7:30 UTC → cron '30 7 * * 2-4'
+    # GMT (Oct–Mar): 8:30 GMT = 8:30 UTC → cron '30 8 * * 2-4'
+    # Runs Tue–Thu at 7:30 UTC (adjusts naturally with DST)
+    - cron: '30 7 * * 2-4'
   workflow_dispatch:
     inputs:
       client:
         description: 'Client ID'
-        default: 'alex'
+        default: 'irfan'
         required: false
       pillar:
         description: 'Pillar ID (leave blank for Claude to pick)'
@@ -46,7 +49,7 @@ jobs:
           WHATSAPP_PHONE_NUMBER_ID:    ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
           WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
         run: |
-          CLIENT="${{ inputs.client || 'alex' }}"
+          CLIENT="${{ inputs.client || 'irfan' }}"
           ARGS="--client $CLIENT"
           [ -n "${{ inputs.pillar }}" ] && ARGS="$ARGS --pillar ${{ inputs.pillar }}"
           [ -n "${{ inputs.format }}" ] && ARGS="$ARGS --format ${{ inputs.format }}"
