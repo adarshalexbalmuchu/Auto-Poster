@@ -85,7 +85,7 @@ Options:
       await sendWhatsApp(formatDraftMessage(result, filename));
       console.log('✓ WhatsApp notification sent');
     } catch (e) {
-      console.log(`  WhatsApp skipped: ${e.message}`);
+      console.log(`  WhatsApp error: ${e.message}`);
     }
   }
 
