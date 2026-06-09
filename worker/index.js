@@ -57,8 +57,6 @@ function timingSafeEqual(a, b) {
 async function verifySignature(request, secret) {
   const signature = request.headers.get('x-hub-signature-256');
   if (!signature) return false;
-  const ts = parseInt(request.headers.get('x-hub-timestamp') || '0', 10);
-  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
   const body = await request.clone().arrayBuffer();
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
