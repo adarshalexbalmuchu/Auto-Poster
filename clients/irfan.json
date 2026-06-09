@@ -7,28 +7,28 @@
   "about": "25 years of enterprise technology leadership across cloud transformation, programme delivery, and operating model redesign. Senior roles at Vodafone, Atos, Capgemini, Interserve, and Travis Perkins. Now focused on enterprise AI adoption and governance. Based in the United Kingdom, targeting European and Asian business audiences. Not an AI builder or researcher — an enterprise delivery veteran who understands how large organisations actually work, and applies that lens to AI. The gap he writes about: most AI rollouts fail culturally, not technically.",
   "pillars": [
     {
-      "id": "ai-enterprise-ops",
-      "label": "AI Transforming Enterprise Operations",
-      "description": "How AI is reshaping back-office functions, supply chains, and large-scale decision-making. Real enterprise use cases, not startup demos. What actually works at scale inside complex organisations.",
+      "id": "ai-at-work",
+      "label": "AI at Work",
+      "description": "How AI is actually changing enterprise operations from the inside — not from a consultant's slide deck, but from someone who sat inside slow-moving, complex organisations and watched them resist change. Supply chains, back-office functions, large-scale decision-making. Includes cross-industry observations from telecoms (Vodafone) to logistics (Travis Perkins) to IT services (Atos, Capgemini) to facilities (Interserve) — the contrast between AI-native companies and legacy-heavy industries nobody else is writing about.",
       "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"]
     },
     {
+      "id": "adoption-gap",
+      "label": "The Adoption Gap",
+      "description": "The gap between pilot intent and production deployment — Irfan's sharpest and most differentiated angle. Why enterprise AI pilots keep succeeding while organisation-wide rollouts keep failing. Accountability structures, governance failures, delivery experience not theory. The most contrarian takes belong here. This is where Irfan's 25 years of watching complex programmes fail culturally — not technically — gives him credibility no researcher or startup founder can match.",
+      "hashtags": ["#AIAdoption", "#EnterpriseAI", "#AIGovernance"]
+    },
+    {
       "id": "human-side-ai",
-      "label": "The Human Side of AI Adoption",
-      "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the gap between pilot success and organisation-wide deployment.",
+      "label": "Human Side of AI",
+      "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the emotional and organisational friction that no governance framework addresses. Universal and human — travels well across European and Asian enterprise audiences. The warmest pillar, highest engagement potential.",
       "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"]
     },
     {
-      "id": "europe-asia-ai",
-      "label": "Europe vs Asia AI Landscape",
-      "description": "Regulatory contrast between EU AI Act and Asia-Pacific approaches. Investment trends, sovereign AI strategies, what European enterprises can learn from Asian deployment speed and vice versa.",
-      "hashtags": ["#AIPolicy", "#EUAIAct", "#TechLeadership"]
-    },
-    {
-      "id": "future-enterprise",
-      "label": "The Future Enterprise",
-      "description": "What AI-native organisations actually look like in practice. Operating model redesign, governance frameworks, the difference between AI-washed and AI-led organisations. Leadership decisions that separate those who benefit from AI from those who don't.",
-      "hashtags": ["#FutureOfWork", "#AIGovernance", "#EnterpriseStrategy"]
+      "id": "sharp-takes",
+      "label": "Sharp Takes",
+      "description": "Whatever Irfan is actually thinking about that week. A news story that annoyed him, a conversation he had, something he read that he disagreed with, an observation from a client meeting, a prediction he wants to make publicly. No fixed topic. No format rules. The only rule: it must be an actual opinion — something he would say in a room of senior people and stand behind if challenged. Not a summary of someone else's article. Not a safe take. This is where his most viral posts will come from.",
+      "hashtags": ["#AILeadership", "#EnterpriseStrategy", "#TechLeadership"]
     }
   ],
   "postingSchedule": {
