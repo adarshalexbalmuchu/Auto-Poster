@@ -88,7 +88,6 @@ function getPillarHashtags(client, pillarId, max = 3) {
 function buildPostPrompt(client, topicData) {
   const hashtags = getPillarHashtags(client, topicData.pillarId);
   const pillar = client.pillars.find(p => p.id === topicData.pillarId) || client.pillars[0];
-  const taggingContext = (pillar.tags || []).join(', ');
 
   const formatGuides = {
     text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
@@ -127,10 +126,10 @@ HOOK — the first 1–2 lines (everything before "see more" on mobile):
 - Do NOT open with "I", a question, or a greeting.
 
 TAGGING:
-- Tag 1–2 organisations or people using @Name format ONLY when they are the direct subject of a specific factual claim in the post.
-- Never tag just for reach. Only tag if naming them adds credibility or context to that specific sentence.
-- Put tags naturally in the sentence, not as a list at the end.
-${taggingContext ? `- Relevant accounts to consider (only when genuinely on-topic): ${taggingContext}` : ''}
+- When the post directly references a specific company, brand, or well-known person by name, write their name as @Name so it can be tagged on LinkedIn.
+- Only tag entities that the post is actually talking about — never add tags just for reach.
+- Place the @mention naturally where the name appears in the sentence, not as a list at the end.
+- Maximum 2 tags per post. If more than 2 entities are mentioned, only tag the most central ones.
 
 CLOSING QUESTION:
 - Name a specific role or team: "your CTO", "your operations team", "your last implementation partner".
