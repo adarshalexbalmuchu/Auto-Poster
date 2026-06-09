@@ -154,8 +154,10 @@ export default {
       let body;
       try { body = await request.json(); } catch { return new Response('Bad Request', { status: 400 }); }
 
-      const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      if (!message) return new Response('OK', { status: 200 });
+      // Ignore delivery/read status callbacks — they have no messages array
+      const value = body?.entry?.[0]?.changes?.[0]?.value;
+      if (!value?.messages) return new Response('OK', { status: 200 });
+      const message = value.messages[0];
 
       const from = message.from;
       if (from !== env.WHATSAPP_OWNER_NUMBER) {
@@ -189,6 +191,10 @@ async function handleText(env, from, text) {
   const state = await getState(env, from);
 
   if (lower === 'new post' || lower === 'new') {
+    if (state.step === 'generating') {
+      await sendText(env, from, '⏳ Already generating a post — please wait for the preview to arrive.');
+      return;
+    }
     await clearState(env, from);
     await setState(env, from, { step: 'awaiting_client' });
     await sendClientButtons(env, from);
@@ -287,6 +293,10 @@ async function doPost(env, from, state) {
 async function doRegenerate(env, from, state) {
   if (!state.client) {
     await sendText(env, from, 'No active session. Reply *new post* to start.');
+    return;
+  }
+  if (state.step === 'generating') {
+    await sendText(env, from, '⏳ Already generating — please wait for the preview to arrive.');
     return;
   }
   await setState(env, from, { ...state, step: 'generating' });
