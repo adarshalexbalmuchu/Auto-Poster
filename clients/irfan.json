@@ -10,41 +10,25 @@
       "id": "ai-enterprise-ops",
       "label": "AI Transforming Enterprise Operations",
       "description": "How AI is reshaping back-office functions, supply chains, and large-scale decision-making. Real enterprise use cases, not startup demos. What actually works at scale inside complex organisations.",
-      "hashtags": [
-        "#EnterpriseAI",
-        "#AIAdoption",
-        "#DigitalTransformation"
-      ]
+      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"]
     },
     {
       "id": "human-side-ai",
       "label": "The Human Side of AI Adoption",
       "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the gap between pilot success and organisation-wide deployment.",
-      "hashtags": [
-        "#ChangeManagement",
-        "#AILeadership",
-        "#FutureOfWork"
-      ]
+      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"]
     },
     {
       "id": "europe-asia-ai",
       "label": "Europe vs Asia AI Landscape",
       "description": "Regulatory contrast between EU AI Act and Asia-Pacific approaches. Investment trends, sovereign AI strategies, what European enterprises can learn from Asian deployment speed and vice versa.",
-      "hashtags": [
-        "#AIPolicy",
-        "#EUAIAct",
-        "#TechLeadership"
-      ]
+      "hashtags": ["#AIPolicy", "#EUAIAct", "#TechLeadership"]
     },
     {
       "id": "future-enterprise",
       "label": "The Future Enterprise",
       "description": "What AI-native organisations actually look like in practice. Operating model redesign, governance frameworks, the difference between AI-washed and AI-led organisations. Leadership decisions that separate those who benefit from AI from those who don't.",
-      "hashtags": [
-        "#FutureOfWork",
-        "#AIGovernance",
-        "#EnterpriseStrategy"
-      ]
+      "hashtags": ["#FutureOfWork", "#AIGovernance", "#EnterpriseStrategy"]
     }
   ],
   "postingSchedule": {

@@ -10,51 +10,31 @@
       "id": "civic-tech",
       "label": "Civic Tech & Urban Policy",
       "description": "FloodReady Delhi, GIS, 290-ward flood prediction, Yamuna river levels, public infrastructure gaps, urban flooding policy.",
-      "hashtags": [
-        "#CivicTech",
-        "#UrbanPolicy",
-        "#GIS",
-        "#FloodReady"
-      ]
+      "hashtags": ["#CivicTech", "#UrbanPolicy", "#GIS", "#FloodReady"]
     },
     {
       "id": "building",
       "label": "Building in Public",
       "description": "Web development projects — Provoke AI (argument-based document reading app), Unitech India e-commerce site, Blast Learning edtech platform. Real problems, real constraints, honest lessons.",
-      "hashtags": [
-        "#BuildingInPublic",
-        "#WebDev",
-        "#IndieHacker"
-      ]
+      "hashtags": ["#BuildingInPublic", "#WebDev", "#IndieHacker"]
     },
     {
       "id": "the-notebook",
       "label": "The Notebook",
       "description": "Personal essays and field notes. Rasabeda SIIP fieldwork in Jharkhand, Subarnarekha river cleanup (500kg waste), conservation, wildlife photography observations.",
-      "hashtags": [
-        "#TheNotebook",
-        "#Conservation",
-        "#FieldNotes"
-      ]
+      "hashtags": ["#TheNotebook", "#Conservation", "#FieldNotes"]
     },
     {
       "id": "ai-tools",
       "label": "AI & Enterprise",
       "description": "AI adoption in India, gap between GenAI pilot intent and production deployment, honest takes on what actually works vs hype.",
-      "hashtags": [
-        "#AI",
-        "#EnterpriseAI",
-        "#India"
-      ]
+      "hashtags": ["#AI", "#EnterpriseAI", "#India"]
     },
     {
       "id": "trading",
       "label": "Trading & Markets",
       "description": "Intraday equity, F&O observations. What you noticed in the market, not advice. Honest, specific, not advisory.",
-      "hashtags": [
-        "#Trading",
-        "#EquityMarkets"
-      ]
+      "hashtags": ["#Trading", "#EquityMarkets"]
     }
   ],
   "postingSchedule": {
