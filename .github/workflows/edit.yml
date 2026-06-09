@@ -60,4 +60,9 @@ jobs:
           git config user.name  "Auto-Poster Bot"
           git config user.email "bot@auto-poster.local"
           git add -f drafts/
-          git diff --staged --quiet || (git pull --rebase origin main && git commit -m "edit: $(date -u +%Y-%m-%dT%H:%M:%S) [${{ inputs.client }}]" && git push)
+          if ! git diff --staged --quiet; then
+            git stash --keep-index 2>/dev/null || true
+            git commit -m "edit: $(date -u +%Y-%m-%dT%H:%M:%S) [${{ inputs.client }}]"
+            git pull --rebase origin main
+            git push
+          fi
