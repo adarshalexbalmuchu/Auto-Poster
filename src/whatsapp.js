@@ -109,7 +109,7 @@ export async function sendDraftNotification(result, draftFilename) {
     }
   } else {
     // Text post preview
-    const preview = postText.length > 3500 ? postText.slice(0, 3500) + '…' : postText;
+    const preview = postText.length > 3900 ? postText.slice(0, 3900) + '…' : postText;
     await waPost(phoneNumberId, token, {
       messaging_product: 'whatsapp', to, type: 'text',
       text: { body: `${header}---\n${preview}\n---` },

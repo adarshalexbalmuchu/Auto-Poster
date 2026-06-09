@@ -101,6 +101,7 @@ HARD RULES:
 - ONE strong number maximum. Lead with the insight, use the number as proof.
 - End with ONE direct question aimed at "you" or "your organisation" — a leadership implication, never a product pitch.
 - Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 from: ${hashtags}.
+- Total post length (body + hashtags) MUST be under 2800 characters. LinkedIn's hard cap is 3000 — stay below it.
 - No preamble. No "here's a post:". Just the post itself.
 
 Write now:`;
