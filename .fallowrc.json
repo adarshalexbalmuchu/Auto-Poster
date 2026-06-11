@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "worker/index.js",
+    "src/run.js",
+    "src/edit.js",
+    "src/generate.js",
+    "src/post.js",
+    "src/analytics.js",
+    "src/auth.js",
+    "scripts/*.js"
+  ]
+}
