@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-11T10-17-35-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-11T10:17:35.885Z",
+  "topicData": {
+    "pillarId": "sharp-takes",
+    "topic": "TCS and anthropic partnership for providing all 50k employee AI access",
+    "angle": "TCS and anthropic partnership for providing all 50k employee AI access",
+    "format": "text"
+  },
+  "postText": "50,000 employees getting Claude access sounds like a big move. It is mostly a procurement decision.\n\n@TCS and @Anthropic just announced enterprise-wide AI access for TCS's workforce. The headline writes itself. But the harder question is never \"do your people have the tool.\" It is whether they know what to do with it.\n\nMost large-scale AI rollouts stall at the same place. The tool lands. The workflows do not change. Six months later, usage data shows 80% of licences sitting idle, and leadership calls it a culture problem.\n\nIt is not a culture problem. It is a deployment problem. Access without redesigned workflows is just an expensive subscription.\n\nThe companies actually getting value from enterprise AI are not the ones with the biggest deals. They are the ones where someone, usually a mid-level person with enough autonomy, rebuilt a real process around the tool and made it stick.\n\n50,000 licences means nothing if the system of work around those licences stays exactly the same.\n\nWho inside your organisation actually owns the workflow redesign, not the rollout announcement?\n\n#Opinion #TechTakes #SharpTakes",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
