@@ -3,23 +3,14 @@
  *
  * Supports:
  *  - Text posts (UGC Posts API)
- *  - Image posts (registerUpload → upload binary → UGC post)
- *  - Document/carousel posts (REST Posts API v202210 with /rest/documents upload)
+ *  - Document/PDF posts (REST Posts API v202210 with /rest/documents upload)
  */
 
 const LINKEDIN_API_V2 = 'https://api.linkedin.com/v2';
 const LINKEDIN_REST = 'https://api.linkedin.com/rest';
 
-function envKey(clientId, suffix) {
+export function envKey(clientId, suffix) {
   return process.env[`${clientId.toUpperCase()}_LINKEDIN_${suffix}`] || process.env[`LINKEDIN_${suffix}`];
-}
-
-export function isTokenValid(client) {
-  const token = envKey(client.id, 'ACCESS_TOKEN');
-  if (!token) return false;
-  const expiresAt = envKey(client.id, 'TOKEN_EXPIRES_AT');
-  if (!expiresAt) return !!token;
-  return new Date(expiresAt) > new Date(Date.now() + 24 * 60 * 60 * 1000);
 }
 
 function getCredentials(client) {
@@ -62,57 +53,7 @@ async function apiPost(url, token, body, extraHeaders = {}) {
   return { res, data };
 }
 
-// ─── Text post ────────────────────────────────────────────────────────────────
-
-export async function postText(client, text) {
-  const token = requireToken(client);
-  const { personUrn } = getCredentials(client);
-
-  const payload = {
-    author: personUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: { text },
-        shareMediaCategory: 'NONE',
-      },
-    },
-    visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
-  };
-
-  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, payload);
-  const postId = res.headers.get('x-restli-id') || data?.id || null;
-  return { postId, data };
-}
-
-// ─── Image post ───────────────────────────────────────────────────────────────
-
-export async function registerImageUpload(client) {
-  const token = requireToken(client);
-  const { personUrn } = getCredentials(client);
-
-  const payload = {
-    registerUploadRequest: {
-      owner: personUrn,
-      recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-      serviceRelationships: [
-        { identifier: 'urn:li:userGeneratedContent', relationshipType: 'OWNER' },
-      ],
-    },
-  };
-
-  const { data } = await apiPost(
-    `${LINKEDIN_API_V2}/assets?action=registerUpload`,
-    token,
-    payload
-  );
-  return {
-    uploadUrl: data.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl,
-    asset: data.value.asset,
-  };
-}
-
-export async function uploadBinary(uploadUrl, buffer, token, contentType = 'image/png') {
+async function uploadBinary(uploadUrl, buffer, token, contentType) {
   const res = await fetch(uploadUrl, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': contentType },
@@ -125,111 +66,76 @@ export async function uploadBinary(uploadUrl, buffer, token, contentType = 'imag
   }
 }
 
-export async function postWithImage(client, text, imageBuffer, contentType = 'image/png') {
+// ─── Text post ────────────────────────────────────────────────────────────────
+
+export async function postText(client, text) {
   const token = requireToken(client);
   const { personUrn } = getCredentials(client);
 
-  const { uploadUrl, asset } = await registerImageUpload(client);
-  await uploadBinary(uploadUrl, imageBuffer, token, contentType);
-
-  const payload = {
+  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, {
     author: personUrn,
     lifecycleState: 'PUBLISHED',
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
         shareCommentary: { text },
-        shareMediaCategory: 'IMAGE',
-        media: [
-          {
-            status: 'READY',
-            media: asset,
-          },
-        ],
+        shareMediaCategory: 'NONE',
       },
     },
     visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
-  };
+  });
 
-  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, payload);
   const postId = res.headers.get('x-restli-id') || data?.id || null;
   return { postId, data };
 }
 
-// ─── Document / PDF carousel post ────────────────────────────────────────────
-
-export async function initDocumentUpload(client) {
-  const token = requireToken(client);
-  const { personUrn } = getCredentials(client);
-
-  const res = await fetch(`${LINKEDIN_REST}/documents`, {
-    method: 'POST',
-    headers: {
-      ...authHeaders(token),
-      'LinkedIn-Version': '202210',
-    },
-    body: JSON.stringify({
-      initializeUploadRequest: { owner: personUrn },
-    }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = data?.message || data?.error || JSON.stringify(data);
-    throw new Error(`Document init failed (${res.status}): ${msg}`);
-  }
-
-  return {
-    uploadUrl: data.value.uploadUrl,
-    document: data.value.document,
-  };
-}
-
-export async function postDocument(client, text, documentUrn, title) {
-  const token = requireToken(client);
-  const { personUrn } = getCredentials(client);
-
-  const payload = {
-    author: personUrn,
-    commentary: text,
-    visibility: 'PUBLIC',
-    distribution: {
-      feedDistribution: 'MAIN_FEED',
-      targetEntities: [],
-      thirdPartyDistributionChannels: [],
-    },
-    content: {
-      document: {
-        owner: personUrn,
-        title,
-        uploadedDocument: documentUrn,
-      },
-    },
-    lifecycleState: 'PUBLISHED',
-    isReshareDisabledByAuthor: false,
-  };
-
-  const res = await fetch(`${LINKEDIN_REST}/posts`, {
-    method: 'POST',
-    headers: { ...authHeaders(token), 'LinkedIn-Version': '202210' },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = data?.message || data?.error || JSON.stringify(data);
-    throw new Error(`Document post failed (${res.status}): ${msg}`);
-  }
-
-  const postId = res.headers.get('x-restli-id') || data?.id || null;
-  return { postId, data };
-}
+// ─── Document / PDF post ──────────────────────────────────────────────────────
 
 export async function uploadAndPostDocument(client, text, pdfBuffer, title) {
   const token = requireToken(client);
+  const { personUrn } = getCredentials(client);
 
-  const { uploadUrl, document: documentUrn } = await initDocumentUpload(client);
+  // Step 1: initialise upload
+  const initRes = await fetch(`${LINKEDIN_REST}/documents`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'LinkedIn-Version': '202210' },
+    body: JSON.stringify({ initializeUploadRequest: { owner: personUrn } }),
+  });
+  const initData = await initRes.json().catch(() => ({}));
+  if (!initRes.ok) {
+    const msg = initData?.message || initData?.error || JSON.stringify(initData);
+    throw new Error(`Document init failed (${initRes.status}): ${msg}`);
+  }
+  const { uploadUrl, document: documentUrn } = initData.value;
 
+  // Step 2: upload PDF bytes
   await uploadBinary(uploadUrl, pdfBuffer, token, 'application/pdf');
 
-  return postDocument(client, text, documentUrn, title);
+  // Step 3: publish post
+  const postRes = await fetch(`${LINKEDIN_REST}/posts`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'LinkedIn-Version': '202210' },
+    body: JSON.stringify({
+      author: personUrn,
+      commentary: text,
+      visibility: 'PUBLIC',
+      distribution: {
+        feedDistribution: 'MAIN_FEED',
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      content: {
+        document: { owner: personUrn, title, uploadedDocument: documentUrn },
+      },
+      lifecycleState: 'PUBLISHED',
+      isReshareDisabledByAuthor: false,
+    }),
+  });
+  const postData = await postRes.json().catch(() => ({}));
+  if (!postRes.ok) {
+    const msg = postData?.message || postData?.error || JSON.stringify(postData);
+    throw new Error(`Document post failed (${postRes.status}): ${msg}`);
+  }
+
+  const postId = postRes.headers.get('x-restli-id') || postData?.id || null;
+  return { postId, data: postData };
 }

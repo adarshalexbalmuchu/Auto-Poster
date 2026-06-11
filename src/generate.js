@@ -13,7 +13,7 @@ import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
 
-const HISTORY_PATH = './drafts/history.json';
+export const HISTORY_PATH = './drafts/history.json';
 
 function readHistory(clientId) {
   if (!existsSync(HISTORY_PATH)) return [];
@@ -23,7 +23,7 @@ function readHistory(clientId) {
 
 const anthropic = new Anthropic();
 
-const MODEL = 'claude-sonnet-4-6';
+export const MODEL = 'claude-sonnet-4-6';
 const TOPIC_MODEL = 'claude-haiku-4-5-20251001';
 
 const ALLOWED_CLIENTS = new Set(['irfan', 'alex']);
