@@ -260,6 +260,15 @@ async function handleText(env, from, text) {
     return;
   }
 
+  // If a draft is in progress or ready, treat any unrecognised message as an edit instruction.
+  // This means the user never needs to type "edit:" — just send the instruction naturally.
+  if (state.client && (state.step === 'generating' || state.step === 'pending_review')) {
+    const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
+    await sendText(env, from, `✏️ Applying edit...\n\n_"${preview}"_\n\nYou'll receive the revised draft shortly.`);
+    await triggerEdit(env, from, state, text);
+    return;
+  }
+
   await sendText(env, from, 'Reply *new post* to generate a post, or *help* to see all commands.');
 }
 
@@ -339,9 +348,9 @@ async function sendHelp(env, from) {
     `• *post* — publish latest draft to LinkedIn\n` +
     `• *skip* — discard latest draft\n` +
     `• *regenerate* — rewrite with same topic\n` +
-    `• *edit: [instruction]* — refine current draft\n` +
-    `  e.g. _edit: sharpen the opening hook_\n` +
-    `  e.g. _edit: make it shorter_\n` +
+    `• *[your instruction]* — refine the draft once preview arrives\n` +
+    `  e.g. _make it shorter_\n` +
+    `  e.g. _sharpen the opening hook_\n` +
     `• *status* — check bot status\n` +
     `• *reset* — clear stuck session and start over\n` +
     `• *help* — show this menu`
