@@ -11,6 +11,7 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
+import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
 
 export const HISTORY_PATH = './drafts/history.json';
 
@@ -270,25 +271,14 @@ export function recordTopic(clientId, topic) {
 // ─── CLI ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const args = process.argv.slice(2);
-  let clientId = null, pillarId = null, seed = null, format = null;
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--client' && args[i + 1]) clientId = args[++i];
-    if (args[i] === '--pillar' && args[i + 1]) pillarId = args[++i];
-    if (args[i] === '--seed' && args[i + 1]) seed = args[++i];
-    if (args[i] === '--format' && args[i + 1]) format = args[++i];
-  }
+  const { clientId, pillarId, seed, format } = parseGenerateArgs(process.argv.slice(2));
 
   if (!clientId) {
     console.error('Usage: npm run generate -- --client <id> [--pillar <id>] [--seed "topic"] [--format text|list|story|notebook]');
     process.exit(1);
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('Missing ANTHROPIC_API_KEY in .env');
-    process.exit(1);
-  }
+  requireApiKey();
 
   console.log(`\nGenerating ${format || 'text'} post for: ${clientId}`);
   if (pillarId) console.log(`Pillar: ${pillarId}`);
