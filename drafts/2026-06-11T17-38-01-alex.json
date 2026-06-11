@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-11T17-38-01-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-11T17:38:01.599Z",
+  "topicData": {
+    "pillarId": "the-notebook",
+    "topic": "Claude corps",
+    "angle": "Claude corps",
+    "format": "text"
+  },
+  "postText": "@Anthropic just announced Claude Corps. And I had to read it twice.\n\nThe idea: place Claude in real organizations doing real work. Not demos. Not pilots. Actual deployment with nonprofits, public sector teams, researchers.\n\nI've been building with Claude for a while now. The part that always slows things down isn't the model. It's the gap between what the tool can do and what the people using it actually need day to day.\n\nClaude Corps seems to be betting that closing that gap requires presence, not just access. That you learn more from being inside a broken workflow than from outside it.\n\nI don't know if it works at scale. That part is genuinely unclear to me.\n\nBut the instinct feels right. The best thing that happened to FloodReady wasn't the data or the stack. It was sitting with the actual problem long enough to stop solving the wrong one.\n\nCurious what kinds of organizations are getting picked first, and whether the orgs get any real say in how Claude gets used.\n\n#FieldNotes #TheNotebook #Conservation",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
