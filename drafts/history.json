@@ -5,5 +5,12 @@
     "topic": "Bangalore",
     "hook": "Bangalore keeps building upward while the ground underneath gets harder to read.",
     "date": "2026-06-11"
+  },
+  {
+    "client": "alex",
+    "pillar": "ai-watch",
+    "topic": "TCS and anthropic partnership for providing 50k associate with AI access",
+    "hook": "@TCS just gave 50,000 of its people direct access to @Anthropic's Claude.",
+    "date": "2026-06-11"
   }
 ]
