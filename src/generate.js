@@ -24,6 +24,7 @@ function readHistory(clientId) {
 const anthropic = new Anthropic();
 
 const MODEL = 'claude-sonnet-4-6';
+const TOPIC_MODEL = 'claude-haiku-4-5-20251001';
 
 const ALLOWED_CLIENTS = new Set(['irfan', 'alex']);
 
@@ -127,27 +128,23 @@ function getPillarHashtags(client, pillarId, max = 3) {
   return pillar.hashtags.slice(0, max).join(', ');
 }
 
-function buildPostPrompt(client, topicData) {
+const FORMAT_GUIDES = {
+  text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
+  list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
+  story:    'A first-person scene. Open with where you were or what you saw — not with "I". One moment, what it meant. 150–200 words target.',
+  notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
+};
+
+// Returns { staticPart, dynamicPart } — static is cached across calls for the same client.
+function buildPostPromptParts(client, topicData) {
   const hashtags = getPillarHashtags(client, topicData.pillarId);
-  const pillar = client.pillars.find(p => p.id === topicData.pillarId) || client.pillars[0];
+  const guide = FORMAT_GUIDES[topicData.format] || FORMAT_GUIDES.text;
 
-  const formatGuides = {
-    text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
-    list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
-    story:    'A first-person scene. Open with where you were or what you saw — not with "I". One moment, what it meant. 150–200 words target.',
-    notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
-  };
-
-  const guide = formatGuides[topicData.format] || formatGuides.text;
-
-  return `You are writing a LinkedIn post for ${client.name}.
+  const staticPart =
+`You are writing a LinkedIn post for ${client.name}.
 
 VOICE AND STYLE RULES — follow every one precisely:
 ${client.voice}
-
-Topic: ${topicData.topic}
-Angle / hook: ${topicData.angle}
-Format guidance: ${guide}
 
 HARD RULES:
 - Do NOT use em dashes (—). Use a period or a new sentence instead.
@@ -155,7 +152,7 @@ HARD RULES:
 - Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".
 - ONE strong number maximum. Lead with the insight, use the number as proof.
 - Total post length (body + hashtags) MUST be under 2800 characters. Target 150–200 words — LinkedIn's reach sweet spot is 900–1200 characters. Longer posts lose completion rate and algorithmic reach.
-- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 from: ${hashtags}.
+- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.
 - No preamble. No "here's a post:". Just the post itself.
 
 HOOK — the first 1–2 lines (everything before "see more" on mobile):
@@ -178,9 +175,18 @@ CLOSING QUESTION:
 - Must create mild discomfort — a question they have not asked themselves yet.
 - One sentence. Answerable in a comment. Not rhetorical.
 - BAD: "What do you think about this?"
-- GOOD: "Has your board named who is accountable when an AI system makes a costly wrong call?"
+- GOOD: "Has your board named who is accountable when an AI system makes a costly wrong call?"`;
+
+  const dynamicPart =
+`Topic: ${topicData.topic}
+Angle / hook: ${topicData.angle}
+Format guidance: ${guide}
+Hashtags — use 2–3 from: ${hashtags}.
 
 Write now:`;
+
+  return { staticPart, dynamicPart };
+}
 }
 
 // ─── Carousel slide writing ───────────────────────────────────────────────────
@@ -238,7 +244,7 @@ export async function generateForClient(clientId, opts = {}) {
     };
   } else {
     const topicMsg = await anthropic.messages.create({
-      model: MODEL,
+      model: TOPIC_MODEL,
       max_tokens: 512,
       messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId) }],
     });
@@ -254,7 +260,7 @@ export async function generateForClient(clientId, opts = {}) {
   if (opts.format === 'carousel') {
     const carouselMsg = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2048,
+      max_tokens: 1536,
       messages: [{ role: 'user', content: buildCarouselPrompt(client, topicData) }],
     });
 
@@ -269,10 +275,17 @@ export async function generateForClient(clientId, opts = {}) {
     return { client, topicData, postText: carouselData.caption, carouselData, type: 'carousel' };
   }
 
+  const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData);
   const postMsg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
-    messages: [{ role: 'user', content: buildPostPrompt(client, topicData) }],
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: staticPart, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: dynamicPart },
+      ],
+    }],
   });
 
   const postText = postMsg.content
