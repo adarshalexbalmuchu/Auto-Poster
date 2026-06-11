@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-11T10-46-28-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-11T10:46:28.541Z",
+  "topicData": {
+    "pillarId": "ai-watch",
+    "topic": "TCS and anthropic partnership for providing all 50k employee AI access , which is 8% of total 6 lakhs employees",
+    "angle": "TCS and anthropic partnership for providing all 50k employee AI access , which is 8% of total 6 lakhs employees",
+    "format": "text"
+  },
+  "postText": "@TCS just gave 50,000 employees access to @Anthropic's Claude. That's 8% of their 6-lakh workforce.\n\nThe headline reads like bold AI adoption. The math reads differently.\n\n92% of the company is not in the room yet. That's not a pilot. That's a boundary.\n\nThe real question isn't which tool they chose. It's what happens to the output of that 8%. Does it change how the other 5.5 lakh people work, or does it stay inside a productivity bubble that leadership can point to without it threatening anything?\n\nMost large enterprise AI rollouts follow the same pattern. Give access to the digitally confident layer, measure token usage, call it transformation. The harder work is figuring out what changes when someone in delivery or operations actually trusts the model enough to act on it without a human checkpoint.\n\nThat's the gap no partnership announcement covers.\n\nIf you're inside a large org rolling out AI access selectively, who decided where the 8% boundary sits, and what was the actual reason?\n\n#AI #BuildingWithAI #TechTakes",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
