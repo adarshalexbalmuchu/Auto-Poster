@@ -154,14 +154,10 @@ HARD RULES:
 - Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.
 - No preamble. No "here's a post:". Just the post itself.
 
-HOOK — the first 1–2 lines (everything before "see more" on mobile):
-- Must land the central tension in under 15 words.
-- Use one of these proven formats:
-  a) Contrarian: "[What everyone believes]. [Why it is wrong or incomplete]."
-  b) Number + twist: "[Specific stat or number]. [The implication nobody talks about]."
-  c) Scene: "[One-line situation that signals something is broken or surprising]."
-- The hook must make someone who disagrees want to comment.
-- Do NOT open with "I", a question, or a greeting.
+HOOK — the first 1–2 lines:
+- Follow this client's voice rules for how to open. Do not override them.
+- The hook must earn the scroll — make the reader want to keep reading.
+- No generic openers like "In today's world" or "Something interesting happened".
 
 TAGGING:
 - When the post directly references a specific company, brand, or well-known person by name, write their name as @Name so it can be tagged on LinkedIn.
@@ -169,12 +165,10 @@ TAGGING:
 - Place the @mention naturally where the name appears in the sentence, not as a list at the end.
 - Maximum 2 tags per post. If more than 2 entities are mentioned, only tag the most central ones.
 
-CLOSING QUESTION:
-- Name a specific role or team: "your CTO", "your operations team", "your last implementation partner".
-- Must create mild discomfort — a question they have not asked themselves yet.
-- One sentence. Answerable in a comment. Not rhetorical.
-- BAD: "What do you think about this?"
-- GOOD: "Has your board named who is accountable when an AI system makes a costly wrong call?"`;
+CLOSING:
+- Follow this client's voice rules for how to close.
+- End with a question that feels earned by the post — not tacked on.
+- One sentence. Answerable in a comment.`;
 
   const dynamicPart =
 `Topic: ${topicData.topic}
