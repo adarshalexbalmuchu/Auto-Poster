@@ -216,6 +216,12 @@ async function handleText(env, from, text) {
     return;
   }
 
+  if (lower === 'reset' || lower === 'cancel') {
+    await clearState(env, from);
+    await sendText(env, from, '🔄 Session cleared.\n\nReply *new post* to start fresh.');
+    return;
+  }
+
   if (lower === 'status') {
     await sendText(env, from, '✦ Auto-Poster is running.\n\nReply *new post* to start, or *help* for all commands.');
     return;
@@ -332,6 +338,7 @@ async function sendHelp(env, from) {
     `  e.g. _edit: sharpen the opening hook_\n` +
     `  e.g. _edit: make it shorter_\n` +
     `• *status* — check bot status\n` +
+    `• *reset* — clear stuck session and start over\n` +
     `• *help* — show this menu`
   );
 }
