@@ -9,7 +9,7 @@
     {
       "id": "ai-watch",
       "label": "AI Watch",
-      "description": "Alex's take on AI news, new model releases, research drops — always from a builder's perspective, not a commentator's. The angle is always 'what does this actually change in practice.' He has been building solo with AI tools long enough to know what a new Claude or GPT release genuinely shifts in his workflow and what is marketing. That specificity is the edge. Never a summary, always a genuine opinion grounded in real usage.",
+      "description": "Alex's reaction to AI news — new models, big deals, research drops. He has been building with these tools long enough to know what actually changes and what is just marketing. Write like he just read the announcement and is thinking out loud about it. What surprised him. What makes sense. What nobody is asking. Never a summary. Always his actual opinion in plain language.",
       "hashtags": ["#AI", "#BuildingWithAI", "#TechTakes"],
       "frequency": 2,
       "last_posted": null
@@ -17,7 +17,7 @@
     {
       "id": "policy-and-power",
       "label": "Policy & Power",
-      "description": "Public policy, governance frameworks, civic systems — where they work, where they fail, where nobody is paying attention. Could be AI regulation, urban policy, environmental governance, flood infrastructure, anything where a real decision is being made that affects real people. FloodReady Delhi gives him standing here that most students don't have. Not a policy explainer — a grounded opinion from someone who has tried to build something real inside broken systems.",
+      "description": "AI regulation, urban policy, flood infrastructure, civic systems — where they work and where they fail. FloodReady Delhi gives him real standing here. Write like someone who tried to build something inside a broken system and learned things the hard way. Personal, specific, honest. Not a policy analysis. Not an expert take. Just what he actually noticed.",
       "hashtags": ["#PublicPolicy", "#CivicTech", "#UrbanPolicy"],
       "frequency": 1,
       "last_posted": null
@@ -25,7 +25,7 @@
     {
       "id": "building-in-public",
       "label": "Building in Public",
-      "description": "Exactly what he is making, what broke, what he figured out. Provoke AI, Blast Learning, FloodReady, whatever comes next. Raw and specific — the actual process, not a polished product launch. Real stacks, real deployment problems, real clients. The audience is other builders and people who want to understand what solo building actually looks like. He knows what a Vercel timeout at 11pm feels like. Write from there.",
+      "description": "What he is building right now, what broke, what he figured out. Provoke AI, Blast Learning, FloodReady, whatever is next. The actual process — not a launch post, not lessons learned in retrospect. Write from inside the work. 11pm Vercel timeout. A feature that took three days and one line to fix. Something that worked better than expected. Real and specific.",
       "hashtags": ["#BuildingInPublic", "#WebDev", "#IndieHacker"],
       "frequency": 1,
       "last_posted": null
@@ -33,7 +33,7 @@
     {
       "id": "the-notebook",
       "label": "The Notebook",
-      "description": "Personal writing. Philosophical, observational, field-note style. Rasabeda fieldwork in Jharkhand, the Subarnarekha river cleanup, guitar, wildlife photography, the texture of being a person who thinks about things. No agenda. This is the pillar that makes the rest of the account feel like a real person rather than a content machine. Benchmark tone is always the Rasabeda writing — plain, direct, human. Nothing performed.",
+      "description": "Personal writing from the field. Rasabeda, Jharkhand. The Subarnarekha cleanup. Wildlife photography. Guitar. The texture of being a person who notices things. No lesson required. No point to prove. Just write what happened and what it felt like. The Rasabeda essay is the exact benchmark — that plainness, that honesty, those small specific details.",
       "hashtags": ["#TheNotebook", "#FieldNotes", "#Conservation"],
       "frequency": 1,
       "last_posted": null
@@ -41,7 +41,7 @@
     {
       "id": "sharp-takes",
       "label": "Sharp Takes",
-      "description": "Whatever Alex is actually thinking that week that doesn't fit anywhere else. An opinion he wants to put on record. Something that annoyed him. A question he can't stop thinking about. No fixed topic, no format rules. The only rule: it has to be a real take, not a safe one. Something he would say out loud and stand behind. This is where his most memorable posts will come from.",
+      "description": "Something Alex is actually thinking that week. An opinion he wants to put on record. Something that annoyed him. A question he cannot stop thinking about. Say it plainly in Alex's voice — same simple English, same personal register, same honesty. Not a hot take performance. Just what he actually thinks.",
       "hashtags": ["#Opinion", "#TechTakes", "#SharpTakes"],
       "frequency": 1,
       "last_posted": null

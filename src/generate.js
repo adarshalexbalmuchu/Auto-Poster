@@ -130,7 +130,7 @@ function getPillarHashtags(client, pillarId, max = 3) {
 const FORMAT_GUIDES = {
   text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
   list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
-  story:    'A first-person scene. Open with where you were or what you saw — not with "I". One moment, what it meant. 150–200 words target.',
+  story:    'A first-person scene. Open with where you were or what you saw. One moment, what it meant. 150–200 words target.',
   notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
 };
 
