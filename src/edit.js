@@ -12,10 +12,8 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { loadClient } from './generate.js';
+import { loadClient, MODEL } from './generate.js';
 import { sendDraftNotification } from './whatsapp.js';
-
-const MODEL = 'claude-sonnet-4-6';
 
 function findLatestDraft(clientId) {
   let files;
@@ -115,7 +113,7 @@ async function main() {
 
   try {
     await sendDraftNotification(
-      { client, topicData: draft.topicData, postText: revisedText, type: draft.type, carouselData: draft.carouselData || null },
+      { client, topicData: draft.topicData, postText: revisedText },
       draftPath
     );
     console.log('\n✓ WhatsApp notification sent');

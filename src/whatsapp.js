@@ -7,8 +7,6 @@
  *   WHATSAPP_RECIPIENT_NUMBER — your WhatsApp number in E.164 format (e.g. 919876543210)
  */
 
-import { readFile } from 'node:fs/promises';
-
 const API = 'https://graph.facebook.com/v20.0';
 
 function getEnv() {
@@ -54,31 +52,6 @@ async function sendButtons(phoneNumberId, token, to, body, buttons) {
   });
 }
 
-async function uploadMedia(phoneNumberId, token, filePath, contentType) {
-  const fileBuffer = await readFile(filePath);
-  const form = new FormData();
-  form.append('messaging_product', 'whatsapp');
-  form.append('type', contentType);
-  form.append('file', new Blob([fileBuffer], { type: contentType }), filePath.split('/').pop());
-
-  const res = await fetch(`${API}/${phoneNumberId}/media`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-    signal: AbortSignal.timeout(30_000),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Media upload failed ${res.status}: ${JSON.stringify(data)}`);
-  return data.id;
-}
-
-async function sendDocument(phoneNumberId, token, to, mediaId, caption, filename) {
-  await waPost(phoneNumberId, token, {
-    messaging_product: 'whatsapp', to, type: 'document',
-    document: { id: mediaId, caption, filename },
-  });
-}
-
 export async function sendDraftNotification(result, draftFilename) {
   const { token, phoneNumberId, to } = getEnv();
   if (!token || !phoneNumberId || !to) {
@@ -86,40 +59,14 @@ export async function sendDraftNotification(result, draftFilename) {
     return;
   }
 
-  const { client, topicData, postText, type, carouselData } = result;
+  const { client, topicData, postText } = result;
 
-  const header = [
-    `✦ *New draft ready — ${client.name}*`,
-    `*Pillar:* ${topicData.pillarId}`,
-    `*Topic:* ${topicData.topic}`,
-    type === 'carousel' ? `*Type:* Carousel (PDF)` : null,
-    '',
-  ].filter(l => l !== null).join('\n');
-
-  if (type === 'carousel' && carouselData) {
-    const slideList = carouselData.slides
-      .map(s => `${s.id}. *${s.headline}*\n${s.body.slice(0, 80)}${s.body.length > 80 ? '…' : ''}`)
-      .join('\n\n');
-
-    const preview = `${header}*Slides:*\n${slideList}\n\n*Caption:*\n${carouselData.caption.slice(0, 400)}${carouselData.caption.length > 400 ? '…' : ''}`;
-    await waPost(phoneNumberId, token, {
-      messaging_product: 'whatsapp', to, type: 'text', text: { body: preview },
-    });
-
-    const pdfPath = draftFilename.replace('.json', '.pdf');
-    try {
-      const mediaId = await uploadMedia(phoneNumberId, token, pdfPath, 'application/pdf');
-      await sendDocument(phoneNumberId, token, to, mediaId, carouselData.caption.slice(0, 1024), `${topicData.topic.slice(0, 40)}.pdf`);
-    } catch (e) {
-      if (e.code !== 'ENOENT') console.warn('[whatsapp] PDF send failed:', e.message);
-    }
-  } else {
-    const preview = postText.length > 3900 ? postText.slice(0, 3900) + '…' : postText;
-    await waPost(phoneNumberId, token, {
-      messaging_product: 'whatsapp', to, type: 'text',
-      text: { body: `${header}---\n${preview}\n---` },
-    });
-  }
+  const header = `✦ *New draft ready — ${client.name}*\n*Pillar:* ${topicData.pillarId}\n*Topic:* ${topicData.topic}\n\n`;
+  const preview = postText.length > 3900 ? postText.slice(0, 3900) + '…' : postText;
+  await waPost(phoneNumberId, token, {
+    messaging_product: 'whatsapp', to, type: 'text',
+    text: { body: `${header}---\n${preview}\n---` },
+  });
 
   await sendButtons(phoneNumberId, token, to,
     'What would you like to do?\n\nTo refine, reply *edit: [your instruction]*\ne.g. _edit: sharpen the hook_',

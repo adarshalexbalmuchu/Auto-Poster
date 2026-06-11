@@ -13,12 +13,9 @@
 
 import 'dotenv/config';
 import { readdirSync, readFileSync } from 'node:fs';
+import { envKey } from './linkedin.js';
 
 const LINKEDIN_API_V2 = 'https://api.linkedin.com/v2';
-
-function envKey(clientId, suffix) {
-  return process.env[`${clientId.toUpperCase()}_LINKEDIN_${suffix}`] || process.env[`LINKEDIN_${suffix}`];
-}
 
 function authHeaders(token) {
   return {
