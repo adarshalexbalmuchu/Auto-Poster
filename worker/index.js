@@ -276,8 +276,13 @@ async function handleButtonReply(env, from, id) {
   }
 
   if (id.startsWith('pillar_')) {
-    const pillar = id === 'pillar_claude' ? null : id.replace('pillar_', '');
-    await setState(env, from, { ...state, step: 'awaiting_seed', pillar });
+    // id format: pillar_<clientId>_<pillarId|claude>
+    // Client is embedded in the button ID to avoid KV eventual-consistency gaps
+    const parts = id.split('_');
+    const clientId  = parts[1];
+    const pillarPart = parts.slice(2).join('_');
+    const pillar = pillarPart === 'claude' ? null : pillarPart;
+    await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
     await sendText(env, from, 'Any topic seed? Reply with a hint or say *none* and Claude will pick.');
     return;
   }
@@ -321,8 +326,8 @@ async function sendClientButtons(env, from) {
 async function sendPillarList(env, from, clientId) {
   const client = CLIENTS[clientId];
   const rows = [
-    { id: 'pillar_claude', title: 'Claude picks', description: 'AI selects the best topic today' },
-    ...client.pillars.map(p => ({ id: `pillar_${p.id}`, title: p.title })),
+    { id: `pillar_${clientId}_claude`, title: 'Claude picks', description: 'AI selects the best topic today' },
+    ...client.pillars.map(p => ({ id: `pillar_${clientId}_${p.id}`, title: p.title })),
   ];
   await sendList(env, from, `Pick a content pillar for *${client.name}*:`, 'Select pillar', rows);
 }
