@@ -25,10 +25,9 @@ const CLIENTS = {
   irfan: {
     name: 'Irfan',
     pillars: [
-      { id: 'ai-at-work',    title: 'AI at Work'      },
-      { id: 'adoption-gap',  title: 'Adoption Gap'    },
-      { id: 'human-side-ai', title: 'Human Side of AI'},
-      { id: 'sharp-takes',   title: 'Sharp Takes'     },
+      { id: 'delivery-lens',  title: 'The Delivery Lens' },
+      { id: 'where-it-breaks',title: 'Where It Breaks'   },
+      { id: 'sharp-takes',    title: 'Sharp Takes'       },
     ],
   },
   alex: {
