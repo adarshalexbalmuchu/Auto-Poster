@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-11T11-36-46-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-11T11:36:46.694Z",
+  "topicData": {
+    "pillarId": "ai-watch",
+    "topic": "TCS and anthropic partnership for providing 50k associate with AI access",
+    "angle": "TCS and anthropic partnership for providing 50k associate with AI access",
+    "format": "text"
+  },
+  "postText": "@TCS just gave 50,000 of its people direct access to @Anthropic's Claude.\n\nThat is a big number. But the number is not the story.\n\nThe story is what happens after the login.\n\nMost enterprise AI rollouts die in the middle. The tool lands. The training deck goes out. Then nothing changes because no one really had a reason to push through the awkward early phase where AI feels slower than just doing it yourself.\n\n50,000 people is only interesting if even a fraction of them get past that phase.\n\nI've been building with Claude for a while now. It took me time to stop using it like a search engine and start using it like a thinking partner. That shift didn't come from a rollout. It came from a problem I actually needed to solve.\n\nThat is the part no partnership announcement can guarantee.\n\nCurious what this looks like from inside TCS. Are people actually changing how they work, or is it mostly sitting in a tab?\n\n#AI #BuildingWithAI #TechTakes",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
