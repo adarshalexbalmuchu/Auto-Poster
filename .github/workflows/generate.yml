@@ -17,7 +17,7 @@ on:
         description: 'Pillar ID (leave blank for Claude to pick)'
         required: false
       format:
-        description: 'Format: text / list / story / notebook / carousel'
+        description: 'Format: text / list / story / notebook'
         default: 'text'
         required: false
       seed:

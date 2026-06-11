@@ -6,7 +6,6 @@
  *   npm run generate -- --client alex
  *   npm run generate -- --client alex --pillar civic-tech
  *   npm run generate -- --client alex --seed "FloodReady Delhi launch"
- *   npm run generate -- --client alex --format carousel
  */
 
 import 'dotenv/config';
@@ -188,43 +187,6 @@ Write now:`;
   return { staticPart, dynamicPart };
 }
 
-// ─── Carousel slide writing ───────────────────────────────────────────────────
-
-function buildCarouselPrompt(client, topicData) {
-  const hashtags = getPillarHashtags(client, topicData.pillarId);
-
-  return `You are writing a LinkedIn carousel (PDF document post) for ${client.name}.
-
-${client.name}'s voice:
-${client.voice}
-
-Topic: ${topicData.topic}
-Angle / hook: ${topicData.angle}
-
-Create a 5-slide carousel. Each slide is one page of a PDF that LinkedIn shows as swipeable.
-
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "title": "<carousel document title, max 60 chars>",
-  "caption": "<the post caption text that accompanies the carousel, 100-250 words, in ${client.name}'s voice, with 2-3 hashtags from: ${hashtags}>",
-  "slides": [
-    {
-      "id": 1,
-      "headline": "<bold headline text for this slide, max 8 words>",
-      "body": "<body text for this slide, 30-60 words>",
-      "note": "<optional small footnote or stat, max 15 words, or null>"
-    }
-  ]
-}
-
-Slide structure:
-- Slide 1: Hook / What this is about
-- Slides 2-4: The substance (3 key points, lessons, or steps)
-- Slide 5: Takeaway + soft CTA ("Save this", "What would you add?", etc.)
-
-${client.name}'s voice must come through in the body text — grounded, specific, no fluff.`;
-}
-
 // ─── Main generation function ─────────────────────────────────────────────────
 
 export async function generateForClient(clientId, opts = {}) {
@@ -239,7 +201,7 @@ export async function generateForClient(clientId, opts = {}) {
       pillarId: selectedPillarId,
       topic: opts.seed,
       angle: opts.seed,
-      format: opts.format && opts.format !== 'carousel' ? opts.format : (client.formats[0] || 'text'),
+      format: opts.format || (client.formats[0] || 'text'),
     };
   } else {
     const topicMsg = await anthropic.messages.create({
@@ -254,24 +216,6 @@ export async function generateForClient(clientId, opts = {}) {
     } catch {
       throw new Error(`Claude returned invalid JSON for topic selection:\n${raw}`);
     }
-  }
-
-  if (opts.format === 'carousel') {
-    const carouselMsg = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 1536,
-      messages: [{ role: 'user', content: buildCarouselPrompt(client, topicData) }],
-    });
-
-    const raw = carouselMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
-    let carouselData;
-    try {
-      carouselData = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    } catch {
-      throw new Error(`Claude returned invalid JSON for carousel:\n${raw}`);
-    }
-
-    return { client, topicData, postText: carouselData.caption, carouselData, type: 'carousel' };
   }
 
   const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData);
@@ -307,10 +251,8 @@ export function saveDraft(clientId, result) {
     id: `${timestamp}-${clientId}`,
     clientId,
     generatedAt: new Date().toISOString(),
-    type: result.type || 'text',
     topicData: result.topicData,
     postText: result.postText,
-    carouselData: result.carouselData || null,
     posted: false,
     postedAt: null,
     linkedInPostId: null,
@@ -344,7 +286,7 @@ async function main() {
   }
 
   if (!clientId) {
-    console.error('Usage: npm run generate -- --client <id> [--pillar <id>] [--seed "topic"] [--format carousel]');
+    console.error('Usage: npm run generate -- --client <id> [--pillar <id>] [--seed "topic"] [--format text|list|story|notebook]');
     process.exit(1);
   }
 
@@ -366,17 +308,7 @@ async function main() {
   console.log(`Angle  : ${result.topicData.angle}`);
   console.log(`Format : ${result.topicData.format}`);
 
-  if (result.type === 'carousel' && result.carouselData) {
-    console.log('\n─── Carousel Slides ───');
-    result.carouselData.slides.forEach(s => {
-      console.log(`\nSlide ${s.id}: ${s.headline}`);
-      console.log(s.body);
-      if (s.note) console.log(`  [${s.note}]`);
-    });
-    console.log('\n─── Caption ───\n');
-  } else {
-    console.log('\n─── Post ───\n');
-  }
+  console.log('\n─── Post ───\n');
 
   console.log(result.postText);
 

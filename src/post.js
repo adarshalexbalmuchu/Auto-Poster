@@ -9,9 +9,8 @@
 
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
-import { postText, uploadAndPostDocument } from './linkedin.js';
+import { postText } from './linkedin.js';
 import { loadClient, updatePillarLastPosted, HISTORY_PATH } from './generate.js';
-import { buildCarouselPdf } from './carousel.js';
 
 function appendHistory(draft) {
   const records = existsSync(HISTORY_PATH)
@@ -48,29 +47,10 @@ export async function postDraft(draftPath, opts = {}) {
     console.log('─'.repeat(50));
     console.log(draft.postText);
     console.log('─'.repeat(50));
-    console.log(`Type: ${draft.type}`);
-    if (draft.type === 'carousel' && draft.carouselData) {
-      console.log(`Carousel: "${draft.carouselData.title}" (${draft.carouselData.slides.length} slides)`);
-    }
     return { dryRun: true };
   }
 
-  let result;
-
-  if (draft.type === 'carousel' && draft.carouselData) {
-    console.log(`Building carousel PDF (${draft.carouselData.slides.length} slides)...`);
-    const pdfBytes = await buildCarouselPdf(draft.carouselData, client.name);
-
-    console.log(`Uploading PDF carousel to LinkedIn...`);
-    result = await uploadAndPostDocument(
-      client,
-      draft.postText,
-      Buffer.from(pdfBytes),
-      draft.carouselData.title
-    );
-  } else {
-    result = await postText(client, draft.postText);
-  }
+  const result = await postText(client, draft.postText);
 
   markPosted(draftPath, draft, result.postId);
   appendHistory(draft);
@@ -114,7 +94,6 @@ async function main() {
   }
 
   console.log(`\nPosting to LinkedIn for: ${draft.clientId}`);
-  if (draft.type === 'carousel') console.log(`Type: carousel (${draft.carouselData?.slides?.length || 0} slides)`);
   console.log('─'.repeat(50));
   console.log(draft.postText);
   console.log('─'.repeat(50));
