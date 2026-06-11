@@ -1,0 +1,17 @@
+{
+  "id": "2026-06-11T09-54-31-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-06-11T09:54:31.444Z",
+  "type": "text",
+  "topicData": {
+    "pillarId": "sharp-takes",
+    "topic": "TCS and anthropic partnership for providing all the employees 50k of them with AI access",
+    "angle": "TCS and anthropic partnership for providing all the employees 50k of them with AI access",
+    "format": "text"
+  },
+  "postText": "50,000 employees with AI access is not an AI strategy. It is a software rollout dressed up as one.\n\n@TCS and @Anthropic announced exactly this. And the headline will get a lot of applause from people who have never had to explain to a 40,000-person organisation why the tool exists, what problem it solves, and who is accountable when it gets something wrong.\n\nI have watched this pattern play out in a telecoms company with 28,000 employees. The access was there. The adoption was not. Because access and capability are completely different problems, and only one of them shows up in the press release.\n\nThe question is never whether your people have the tool. It is whether the people closest to your most complex work know how to use it on that work specifically.\n\nScaling access to 50,000 people without solving that problem first just means 50,000 people who occasionally use a chatbot.\n\nWhen your organisation rolled out AI access at scale, what broke first — the technology or the behaviour change?\n\n#AILeadership #EnterpriseStrategy #TechLeadership",
+  "carouselData": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
