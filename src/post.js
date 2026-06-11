@@ -9,11 +9,9 @@
 
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
-import { postText, postWithImage, uploadAndPostDocument } from './linkedin.js';
-import { loadClient, updatePillarLastPosted } from './generate.js';
+import { postText, uploadAndPostDocument } from './linkedin.js';
+import { loadClient, updatePillarLastPosted, HISTORY_PATH } from './generate.js';
 import { buildCarouselPdf } from './carousel.js';
-
-const HISTORY_PATH = './drafts/history.json';
 
 function appendHistory(draft) {
   const records = existsSync(HISTORY_PATH)
@@ -82,7 +80,7 @@ export async function postDraft(draftPath, opts = {}) {
   return result;
 }
 
-export function markPosted(draftPath, draft, postId) {
+function markPosted(draftPath, draft, postId) {
   const updated = {
     ...draft,
     posted: true,
