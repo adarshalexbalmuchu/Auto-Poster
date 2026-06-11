@@ -11,6 +11,7 @@
     "run": "node src/run.js",
     "edit": "node src/edit.js",
     "schedule": "node src/scheduler.js",
+    "analytics": "node src/analytics.js",
     "pre-deploy": "node scripts/pre-deploy.js",
     "deploy-worker": "node scripts/pre-deploy.js && cd worker && npx wrangler deploy"
   },

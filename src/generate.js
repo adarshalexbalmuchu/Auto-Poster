@@ -187,7 +187,6 @@ Write now:`;
 
   return { staticPart, dynamicPart };
 }
-}
 
 // ─── Carousel slide writing ───────────────────────────────────────────────────
 
