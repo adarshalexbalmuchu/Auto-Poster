@@ -92,7 +92,7 @@ export async function sendDraftNotification(result, draftFilename) {
     `✦ *New draft ready — ${client.name}*`,
     `*Pillar:* ${topicData.pillarId}`,
     `*Topic:* ${topicData.topic}`,
-    type === 'carousel' ? `*Type:* Carousel (PDF)` : '',
+    type === 'carousel' ? `*Type:* Carousel (PDF)` : null,
     '',
   ].filter(l => l !== null).join('\n');
 

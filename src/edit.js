@@ -87,9 +87,15 @@ async function main() {
     messages: [{
       role: 'user',
       content:
-        'Here is a LinkedIn post draft. Apply this specific edit only and return the full revised post.\n' +
-        'Do not change anything else. Do not add commentary or preamble. Return only the revised post text.\n\n' +
-        `Edit instruction: ${instruction}\n\n` +
+        `You are editing a LinkedIn post draft for ${client.name}.\n\n` +
+        `VOICE AND STYLE RULES — must be preserved through the edit:\n${client.voice}\n\n` +
+        `HARD RULES that must still hold after editing:\n` +
+        `- Do NOT use em dashes (—). Use a period or a new sentence instead.\n` +
+        `- Do NOT use bullet points or numbered lists of any kind.\n` +
+        `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize.\n` +
+        `- Total post length (body + hashtags) MUST be under 2800 characters.\n` +
+        `- No preamble. Return only the revised post text.\n\n` +
+        `Apply ONLY this specific edit instruction — do not change anything else:\n${instruction}\n\n` +
         `Draft:\n${draft.postText}`,
     }],
   });
