@@ -164,6 +164,7 @@ TAGGING:
 - Only tag entities that the post is actually talking about — never add tags just for reach.
 - Place the @mention naturally where the name appears in the sentence, not as a list at the end.
 - Maximum 2 tags per post. If more than 2 entities are mentioned, only tag the most central ones.
+- NEVER use @Name's (possessive) — the apostrophe breaks the tag. Restructure instead: "Claude from @Anthropic" not "@Anthropic's Claude", "a deal with @TCS" not "@TCS's deal".
 
 CLOSING:
 - Follow this client's voice rules for how to close.
