@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-11T11-23-50-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-06-11T11:23:50.800Z",
+  "topicData": {
+    "pillarId": "ai-watch",
+    "topic": "tcs and anthropic , new deal for giving associates AI access",
+    "angle": "tcs and anthropic , new deal for giving associates AI access",
+    "format": "text"
+  },
+  "postText": "@TCS just signed a deal with @Anthropic to give its associates access to Claude.\n\nHalf a million employees. One AI rollout. That is a procurement headline, not a transformation story.\n\nHere is what actually matters: giving people access to a tool and changing how they work are two completely different problems. Most enterprise AI deployments stall right there, in the gap between login credentials and actual behaviour change.\n\nThe question nobody is asking is what the workflow looks like on day 31, not day 1. Who decides which tasks get handed to Claude? Who checks the output? What happens when a client deliverable goes out with a confident AI error baked in?\n\nAccess is the easy part. The hard part is accountability infrastructure. Most firms skip it because it does not show up in a press release.\n\nTCS is big enough to get this right and big enough to make a very visible mess of it.\n\nHas your delivery manager been told who owns an error when Claude is in the loop on a client document?\n\n#AI #BuildingWithAI #TechTakes",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
