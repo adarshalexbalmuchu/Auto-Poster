@@ -7,8 +7,6 @@
  *   npm run run -- --client alex --post          (generate + post immediately)
  *   npm run run -- --client alex --pillar ai-tools
  *   npm run run -- --client alex --seed "FloodReady Delhi launch"
- *   npm run run -- --client alex --format carousel
- *   npm run run -- --client alex --format carousel --post
  */
 
 import 'dotenv/config';
@@ -43,7 +41,6 @@ Options:
   --client <id>      Client to generate for (e.g. alex)
   --pillar <id>      Lock to a specific pillar
   --seed "text"      Provide the topic manually (Claude still writes the post)
-  --format carousel  Generate a carousel instead of a text post
   --post             Post to LinkedIn immediately after generating
   --dry-run          Show what would be posted without actually posting
 `);
@@ -68,16 +65,7 @@ Options:
   console.log(`Topic   : ${result.topicData.topic}`);
   console.log(`Angle   : ${result.topicData.angle}`);
 
-  if (result.type === 'carousel' && result.carouselData) {
-    console.log(`\n─── Carousel: "${result.carouselData.title}" ───`);
-    result.carouselData.slides.forEach(s => {
-      console.log(`\n  [${s.id}] ${s.headline}`);
-      console.log(`       ${s.body.slice(0, 80)}${s.body.length > 80 ? '...' : ''}`);
-    });
-    console.log('\n─── Caption ───\n');
-  } else {
-    console.log('\n─── Post ───\n');
-  }
+  console.log('\n─── Post ───\n');
 
   console.log(result.postText);
 

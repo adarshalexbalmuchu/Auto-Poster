@@ -113,7 +113,7 @@ async function main() {
 
   try {
     await sendDraftNotification(
-      { client, topicData: draft.topicData, postText: revisedText, type: draft.type, carouselData: draft.carouselData || null },
+      { client, topicData: draft.topicData, postText: revisedText },
       draftPath
     );
     console.log('\n✓ WhatsApp notification sent');
