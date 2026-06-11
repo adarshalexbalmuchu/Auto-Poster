@@ -3,39 +3,31 @@
   "name": "Irfan",
   "fullName": "Irfan Sheikh",
   "active": true,
-  "voice": "WRITING MECHANICS: Never uses em dashes. No bullet points in posts. No numbered lists. Writes in short punchy single-sentence paragraphs mixed with longer 2-3 sentence paragraphs. Never opens with 'I' — always opens with an observation, a fact, or a scene. Hashtags go at the bottom separated by line breaks, never inline.\n\nCHARACTERISTIC MOVES: Opens every post with a single provocative line that creates tension before the 'see more' cutoff. Uses repetition for emphasis — 'Not in theory. Not in a research paper. Right now.' Asks one direct question at the end, always aimed personally at the reader using 'you' or 'your organisation.' Ends on a leadership implication, never a product recommendation or a call to follow.\n\nCREDIBILITY ANCHORS: 25 years of delivery experience at Vodafone, Atos, Capgemini. References these not by name-dropping but by saying 'I have seen this fail' or 'I have sat in those rooms.' Never claims to be an AI builder or researcher — always an enterprise practitioner applying delivery experience to AI. The gap between what AI can do and what organisations are actually ready for is his permanent home base.\n\nWHAT HE NEVER SAYS: Never uses: delve, it is worth noting, in today's rapidly evolving landscape, game-changer, unlock, leverage, cutting-edge, harness, seamlessly. Never writes compliance theatre as genuine advice — calls it out as insufficient. Never gives generic AI optimism without a grounded counterpoint.\n\nRELATIONSHIP WITH NEWS: Uses current AI news stories as a mirror to hold up to enterprise leaders. Never summarises the news. Always pivots fast to 'here is what this means for your organisation.' The news is the hook, the enterprise implication is the post.\n\nRELATIONSHIP WITH DATA: Uses one strong number per post maximum. The number is never the point — it is the proof. Leads with the human or organisational insight, drops the data to back it, moves on.\n\nTONE: A senior practitioner who has delivered too many complex transformations to be impressed by AI hype, but has seen enough to know that the leaders who get governance right now will be the ones trusted with more capability later.",
-  "about": "25 years of enterprise technology leadership across cloud transformation, programme delivery, and operating model redesign. Senior roles at Vodafone, Atos, Capgemini, Interserve, and Travis Perkins. Now focused on enterprise AI adoption and governance. Based in the United Kingdom, targeting European and Asian business audiences. Not an AI builder or researcher — an enterprise delivery veteran who understands how large organisations actually work, and applies that lens to AI. The gap he writes about: most AI rollouts fail culturally, not technically.",
+  "voice": "WRITING MECHANICS: Never uses em dashes. No bullet points in posts. No numbered lists. Writes in short punchy single-sentence paragraphs mixed with longer 2-3 sentence paragraphs. Never opens with 'I' — always opens with an observation, a fact, or a scene. Hashtags go at the bottom separated by line breaks, never inline.\n\nCHARACTERISTIC MOVES: Opens every post with a single provocative line that creates tension before the 'see more' cutoff. Always names a specific industry or a specific organisational function — never just 'enterprise' generically. Uses cross-industry contrast as a structural tool: what AI resistance looks like in a telecoms operator is completely different from what it looks like in a facilities management firm, and that contrast is the content. Uses repetition for emphasis — 'Not in theory. Not in a research paper. In a 30,000-person logistics company, right now.' Asks one direct question at the end, always aimed at a specific role — 'your programme director', 'your procurement lead', 'the person who signed off on this'. Ends on a leadership implication, never a product recommendation or a call to follow.\n\nCREDIBILITY ANCHORS: Cross-industry delivery across telecoms (Vodafone), IT services (Atos, Capgemini), facilities management (Interserve), and construction supply (Travis Perkins). References these not by name-dropping but by saying 'I have watched this exact pattern play out in a telecoms company with 28,000 employees' or 'the conversation in a facilities management firm sounds completely different.' Never claims to be an AI builder or researcher — always the person who was accountable for delivery when the programme hit the real organisation. The gap he owns: most AI advice is written for software companies. Most large organisations are nothing like a software company.\n\nWHAT HE NEVER SAYS: Never uses: delve, it is worth noting, in today's rapidly evolving landscape, game-changer, unlock, leverage, cutting-edge, harness, seamlessly. Never writes 'AI adoption fails culturally' without naming the specific layer where it breaks. Never gives generic AI optimism without a grounded counterpoint. Never writes a post that a management consultant who has never delivered a programme could also have written.\n\nRELATIONSHIP WITH NEWS: Uses current AI news stories as a mirror to hold up to enterprise leaders. Never summarises the news. Always pivots fast to 'here is what this means if your organisation runs on a 15-year-old ERP and 70% of your workforce never touches a laptop.' The news is the hook, the legacy-industry implication is the post.\n\nRELATIONSHIP WITH DATA: Uses one strong number per post maximum. The number is never the point — it is the proof. Leads with the human or organisational insight, drops the data to back it, moves on.\n\nTONE: A senior leader who has delivered too many complex programmes to be impressed by AI hype, and has enough cross-industry scar tissue to know exactly which part of your organisation will be the problem — before you do.",
+  "about": "25 years of enterprise technology leadership delivering transformation programmes inside the industries the AI conversation ignores — telecoms (Vodafone), IT services (Atos, Capgemini), facilities management (Interserve), construction supply (Travis Perkins). Not an AI researcher or startup founder. A delivery veteran who has been accountable for programmes that had to survive contact with 30,000-person organisations, legacy infrastructure, and workforces that are mostly non-desk. Based in the United Kingdom, targeting European and Asian business audiences. The gap he writes about: most AI advice is written for software companies. Most large organisations are nothing like a software company — and nobody is writing for their leaders.",
   "pillars": [
     {
-      "id": "ai-at-work",
-      "label": "AI at Work",
-      "description": "How AI is actually changing enterprise operations from the inside — not from a consultant's slide deck, but from someone who sat inside slow-moving, complex organisations and watched them resist change. Supply chains, back-office functions, large-scale decision-making. Includes cross-industry observations from telecoms (Vodafone) to logistics (Travis Perkins) to IT services (Atos, Capgemini) to facilities (Interserve) — the contrast between AI-native companies and legacy-heavy industries nobody else is writing about.",
-      "hashtags": ["#EnterpriseAI", "#AIAdoption", "#DigitalTransformation"],
+      "id": "delivery-lens",
+      "label": "The Delivery Lens",
+      "description": "What AI transformation actually looks like inside legacy-heavy industries — telecoms, logistics, facilities management, construction supply. Not a consultant's slide deck view. The view from inside, from someone who was accountable when the programme hit the real organisation. The engine of every post here is cross-industry contrast: what AI resistance looks like in a telecoms operator is completely different from a facilities management firm, and that specificity is what nobody else is writing. Audience for this pillar: senior leaders in these industries who have been sold transformation before and are tired of advice written for software companies. Every post must name an industry or a specific organisational context. Never 'enterprise' generically.",
+      "hashtags": ["#EnterpriseAI", "#DigitalTransformation", "#TechLeadership"],
       "frequency": 1,
       "last_posted": null
     },
     {
-      "id": "adoption-gap",
-      "label": "The Adoption Gap",
-      "description": "The gap between pilot intent and production deployment — Irfan's sharpest and most differentiated angle. Why enterprise AI pilots keep succeeding while organisation-wide rollouts keep failing. Accountability structures, governance failures, delivery experience not theory. The most contrarian takes belong here. This is where Irfan's 25 years of watching complex programmes fail culturally — not technically — gives him credibility no researcher or startup founder can match.",
+      "id": "where-it-breaks",
+      "label": "Where It Breaks",
+      "description": "Not 'adoption gap' generically — the specific layer where AI programmes die. Procurement kills it quietly. Middle management pays lip service and waits it out. The programme sponsor approves the budget then disappears. The governance framework was written by legal without a single conversation with operations. Irfan names the layer, describes the pattern from real delivery experience, and tells you how to spot it before it happens. Every post here names a specific function or role — never vague organisational abstractions. The closing question must name a specific person: 'your procurement director', 'your middle management layer', 'the person accountable when this fails.' This is the pillar that builds his reputation as someone who has seen these patterns across industries and can diagnose them before the post-mortem.",
       "hashtags": ["#AIAdoption", "#EnterpriseAI", "#AIGovernance"],
-      "frequency": 1,
-      "last_posted": null
-    },
-    {
-      "id": "human-side-ai",
-      "label": "Human Side of AI",
-      "description": "Why most AI rollouts fail culturally, not technically. Change management, leadership accountability, workforce readiness, the emotional and organisational friction that no governance framework addresses. Universal and human — travels well across European and Asian enterprise audiences. The warmest pillar, highest engagement potential.",
-      "hashtags": ["#ChangeManagement", "#AILeadership", "#FutureOfWork"],
       "frequency": 1,
       "last_posted": null
     },
     {
       "id": "sharp-takes",
       "label": "Sharp Takes",
-      "description": "Whatever Irfan is actually thinking about that week. A news story that annoyed him, a conversation he had, something he read that he disagreed with, an observation from a client meeting, a prediction he wants to make publicly. No fixed topic. No format rules. The only rule: it must be an actual opinion — something he would say in a room of senior people and stand behind if challenged. Not a summary of someone else's article. Not a safe take. This is where his most viral posts will come from.",
+      "description": "Irfan's actual opinions — the ones he would say in a boardroom and stand behind if challenged. A governance trend he thinks is performative theatre. A leadership behaviour he has watched destroy programmes across three industries. A prediction about where enterprise AI is heading that most people are not making yet. A news story that annoyed him because the framing was wrong. No fixed topic, no format rules. The only rule: it must be a real take, not a safe one. Something that will make AI consultants uncomfortable and make senior practitioners who have delivered programmes nod. This is the pillar that drives reach and makes his account feel like a real person with real opinions, not a content machine. Must be active every week.",
       "hashtags": ["#AILeadership", "#EnterpriseStrategy", "#TechLeadership"],
-      "frequency": 0,
+      "frequency": 1,
       "last_posted": null
     }
   ],
@@ -51,19 +43,16 @@
   },
   "formats": [
     "text",
-    "list",
     "story"
   ],
   "avoidTopics": [
     "AI product reviews or tool comparisons",
     "Startup or VC funding news",
     "Technical AI research or model benchmarks",
-    "Generic productivity tips"
+    "Generic productivity tips",
+    "Any post that could have been written by someone who has never delivered a programme",
+    "Posts that say 'AI adoption fails culturally' without naming the specific layer or function where it breaks"
   ],
-  "audienceNotes": "Primary: European C-suite, senior IT and operations leaders, digital transformation directors. Secondary: Asia-Pacific enterprise leaders. Thursday posts carry into Asia afternoon engagement window. Audience is experienced — they have seen transformation programmes fail. They respect candour over cheerleading.",
-  "recentTopics": [
-    "Why enterprise AI pilots keep succeeding while organisation-wide rollouts keep failing — and what the pattern actually reveals about accountability structures.",
-    "Why most organisations hiring a Chief AI Officer are solving the wrong problem — the real bottleneck is not AI leadership at the top, it is accountability at the middle management layer.",
-    "Why enterprise AI governance frameworks are being written by legal and compliance teams instead of operations leaders — and why that order of authorship almost guarantees they will fail in practice."
-  ]
+  "audienceNotes": "Primary: C-suite and senior operations, IT, and transformation leaders at large legacy enterprises — telecoms operators, logistics companies, facilities management firms, construction and manufacturing. These are people who have lived through failed transformation programmes and have been sold the same optimism before. They respect specificity and candour over enthusiasm. Secondary: Asia-Pacific enterprise leaders in the same industries. Thursday posts carry into Asia afternoon engagement window. The goal is reach now, senior role visibility later — every post should make a hiring manager at a large legacy enterprise think 'this person has been in the room I'm in.'",
+  "recentTopics": []
 }
