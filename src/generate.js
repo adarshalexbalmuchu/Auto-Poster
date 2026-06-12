@@ -11,6 +11,7 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
+import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
 
 export const HISTORY_PATH = './drafts/history.json';
 
@@ -130,7 +131,7 @@ function getPillarHashtags(client, pillarId, max = 3) {
 const FORMAT_GUIDES = {
   text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
   list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
-  story:    'A first-person scene. Open with where you were or what you saw — not with "I". One moment, what it meant. 150–200 words target.',
+  story:    'A first-person scene. Open with where you were or what you saw. One moment, what it meant. 150–200 words target.',
   notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
 };
 
@@ -154,27 +155,22 @@ HARD RULES:
 - Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.
 - No preamble. No "here's a post:". Just the post itself.
 
-HOOK — the first 1–2 lines (everything before "see more" on mobile):
-- Must land the central tension in under 15 words.
-- Use one of these proven formats:
-  a) Contrarian: "[What everyone believes]. [Why it is wrong or incomplete]."
-  b) Number + twist: "[Specific stat or number]. [The implication nobody talks about]."
-  c) Scene: "[One-line situation that signals something is broken or surprising]."
-- The hook must make someone who disagrees want to comment.
-- Do NOT open with "I", a question, or a greeting.
+HOOK — the first 1–2 lines:
+- Follow this client's voice rules for how to open. Do not override them.
+- The hook must earn the scroll — make the reader want to keep reading.
+- No generic openers like "In today's world" or "Something interesting happened".
 
 TAGGING:
 - When the post directly references a specific company, brand, or well-known person by name, write their name as @Name so it can be tagged on LinkedIn.
 - Only tag entities that the post is actually talking about — never add tags just for reach.
 - Place the @mention naturally where the name appears in the sentence, not as a list at the end.
 - Maximum 2 tags per post. If more than 2 entities are mentioned, only tag the most central ones.
+- NEVER use @Name's (possessive) — the apostrophe breaks the tag. Restructure instead: "Claude from @Anthropic" not "@Anthropic's Claude", "a deal with @TCS" not "@TCS's deal".
 
-CLOSING QUESTION:
-- Name a specific role or team: "your CTO", "your operations team", "your last implementation partner".
-- Must create mild discomfort — a question they have not asked themselves yet.
-- One sentence. Answerable in a comment. Not rhetorical.
-- BAD: "What do you think about this?"
-- GOOD: "Has your board named who is accountable when an AI system makes a costly wrong call?"`;
+CLOSING:
+- Follow this client's voice rules for how to close.
+- End with a question that feels earned by the post — not tacked on.
+- One sentence. Answerable in a comment.`;
 
   const dynamicPart =
 `Topic: ${topicData.topic}
@@ -275,25 +271,14 @@ export function recordTopic(clientId, topic) {
 // ─── CLI ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const args = process.argv.slice(2);
-  let clientId = null, pillarId = null, seed = null, format = null;
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--client' && args[i + 1]) clientId = args[++i];
-    if (args[i] === '--pillar' && args[i + 1]) pillarId = args[++i];
-    if (args[i] === '--seed' && args[i + 1]) seed = args[++i];
-    if (args[i] === '--format' && args[i + 1]) format = args[++i];
-  }
+  const { clientId, pillarId, seed, format } = parseGenerateArgs(process.argv.slice(2));
 
   if (!clientId) {
     console.error('Usage: npm run generate -- --client <id> [--pillar <id>] [--seed "topic"] [--format text|list|story|notebook]');
     process.exit(1);
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('Missing ANTHROPIC_API_KEY in .env');
-    process.exit(1);
-  }
+  requireApiKey();
 
   console.log(`\nGenerating ${format || 'text'} post for: ${clientId}`);
   if (pillarId) console.log(`Pillar: ${pillarId}`);

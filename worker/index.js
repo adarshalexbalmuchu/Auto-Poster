@@ -163,6 +163,12 @@ export default {
         return new Response('OK', { status: 200 });
       }
 
+      // Deduplicate — Meta replays webhooks after worker restarts/redeploys
+      const msgKey = `msg:${message.id}`;
+      const seen = await env.STATE.get(msgKey);
+      if (seen) return new Response('OK', { status: 200 });
+      await env.STATE.put(msgKey, '1', { expirationTtl: 300 });
+
       try {
         if (message.type === 'interactive') {
           const id = message.interactive?.button_reply?.id || message.interactive?.list_reply?.id;

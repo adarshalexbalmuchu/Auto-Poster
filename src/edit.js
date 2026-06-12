@@ -14,6 +14,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { loadClient, MODEL } from './generate.js';
 import { sendDraftNotification } from './whatsapp.js';
+import { requireApiKey } from './cli-utils.js';
 
 function findLatestDraft(clientId) {
   let files;
@@ -36,48 +37,35 @@ function findLatestDraft(clientId) {
   throw new Error(`No unposted draft found for: ${clientId}`);
 }
 
-async function main() {
+function parseEditArgs() {
   const args = process.argv.slice(2);
-  let clientId    = process.env.INPUT_CLIENT       || null;
-  let instruction = process.env.INPUT_INSTRUCTION  || null;
-  let draftPath   = process.env.INPUT_DRAFT_PATH   || null;
-  const phone     = process.env.INPUT_PHONE        || null;
-
+  const opts = {
+    clientId:    process.env.INPUT_CLIENT      || null,
+    instruction: process.env.INPUT_INSTRUCTION || null,
+    draftPath:   process.env.INPUT_DRAFT_PATH  || null,
+    phone:       process.env.INPUT_PHONE       || null,
+  };
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--client'      && args[i + 1]) clientId    = args[++i];
-    if (args[i] === '--instruction' && args[i + 1]) instruction = args[++i];
-    if (args[i] === '--draft'       && args[i + 1]) draftPath   = args[++i];
+    if (args[i] === '--client'      && args[i + 1]) opts.clientId    = args[++i];
+    if (args[i] === '--instruction' && args[i + 1]) opts.instruction = args[++i];
+    if (args[i] === '--draft'       && args[i + 1]) opts.draftPath   = args[++i];
   }
+  return opts;
+}
 
-  if (!clientId) {
-    console.error('Usage: npm run edit -- --client <id> --instruction "your edit"');
-    process.exit(1);
-  }
-  if (!instruction) {
-    console.error('--instruction is required');
-    process.exit(1);
-  }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('Missing ANTHROPIC_API_KEY');
-    process.exit(1);
-  }
-
-  if (!draftPath) draftPath = findLatestDraft(clientId);
-
+function loadDraft(draftPath, clientId) {
+  const path = draftPath || findLatestDraft(clientId);
   let draft;
   try {
-    draft = JSON.parse(readFileSync(draftPath, 'utf8'));
+    draft = JSON.parse(readFileSync(path, 'utf8'));
   } catch {
-    throw new Error(`Could not read draft: ${draftPath}`);
+    throw new Error(`Could not read draft: ${path}`);
   }
   if (draft.posted) throw new Error('Draft already posted — cannot edit.');
+  return { draft, resolvedPath: path };
+}
 
-  const client = loadClient(clientId);
-
-  console.log(`\nEditing draft for: ${client.name}`);
-  console.log(`Draft  : ${draftPath}`);
-  console.log(`Edit   : "${instruction}"\n`);
-
+async function applyEdit(draft, client, instruction) {
   const anthropic = new Anthropic();
   const msg = await anthropic.messages.create({
     model: MODEL,
@@ -97,30 +85,19 @@ async function main() {
         `Draft:\n${draft.postText}`,
     }],
   });
+  return msg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+}
 
-  const revisedText = msg.content
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('')
-    .trim();
-
-  const updated = { ...draft, postText: revisedText, lastEditedAt: new Date().toISOString() };
-  writeFileSync(draftPath, JSON.stringify(updated, null, 2));
-  console.log('✓ Draft updated');
-
-  console.log('\n─── Revised post ───\n');
-  console.log(revisedText);
-
+async function notifyAfterEdit(client, draft, revisedText, resolvedPath, phone) {
   try {
     await sendDraftNotification(
       { client, topicData: draft.topicData, postText: revisedText },
-      draftPath
+      resolvedPath
     );
     console.log('\n✓ WhatsApp notification sent');
   } catch (e) {
     console.warn(`WhatsApp notification skipped: ${e.message}`);
   }
-
   const workerUrl      = process.env.WORKER_URL;
   const callbackSecret = process.env.WORKER_CALLBACK_SECRET;
   if (workerUrl && callbackSecret && phone) {
@@ -135,9 +112,9 @@ async function main() {
         body: JSON.stringify({
           type: 'draft_ready',
           phone,
-          client: clientId,
+          client: draft.clientId,
           pillar: draft.topicData?.pillarId || null,
-          draftPath,
+          draftPath: resolvedPath,
         }),
         signal: AbortSignal.timeout(10_000),
       });
@@ -146,6 +123,37 @@ async function main() {
       console.warn(`Worker callback skipped: ${e.message}`);
     }
   }
+}
+
+async function main() {
+  const { clientId, instruction, draftPath, phone } = parseEditArgs();
+
+  if (!clientId) {
+    console.error('Usage: npm run edit -- --client <id> --instruction "your edit"');
+    process.exit(1);
+  }
+  if (!instruction) {
+    console.error('--instruction is required');
+    process.exit(1);
+  }
+  requireApiKey();
+
+  const client = loadClient(clientId);
+  const { draft, resolvedPath } = loadDraft(draftPath, clientId);
+
+  console.log(`\nEditing draft for: ${client.name}`);
+  console.log(`Draft  : ${resolvedPath}`);
+  console.log(`Edit   : "${instruction}"\n`);
+
+  const revisedText = await applyEdit(draft, client, instruction);
+
+  const updated = { ...draft, postText: revisedText, lastEditedAt: new Date().toISOString() };
+  writeFileSync(resolvedPath, JSON.stringify(updated, null, 2));
+  console.log('✓ Draft updated');
+  console.log('\n─── Revised post ───\n');
+  console.log(revisedText);
+
+  await notifyAfterEdit(client, draft, revisedText, resolvedPath, phone);
 }
 
 main().catch(e => { console.error(e.message); process.exit(1); });
