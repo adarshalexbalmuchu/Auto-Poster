@@ -84,9 +84,35 @@ export function updatePillarLastPosted(clientId, pillarId) {
   renameSync(tmp, path);
 }
 
+// ─── URL context fetching ─────────────────────────────────────────────────────
+
+export async function fetchUrlContext(url) {
+  // Only allow HTTPS to avoid accidental local-network fetches.
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:') throw new Error('Only HTTPS URLs are supported for context fetching');
+
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'auto-poster/1.0 (content research)' },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch source URL (${res.status}): ${url}`);
+
+  const html = await res.text();
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Cap at 4000 chars so we don't blow the prompt budget.
+  return text.length > 4000 ? text.slice(0, 4000) + '…' : text;
+}
+
 // ─── Topic selection ──────────────────────────────────────────────────────────
 
-function buildTopicPrompt(client, pillarId = null) {
+function buildTopicPrompt(client, pillarId = null, contextText = null) {
   const pillars = pillarId
     ? client.pillars.filter(p => p.id === pillarId)
     : client.pillars;
@@ -109,6 +135,10 @@ function buildTopicPrompt(client, pillarId = null) {
     ? `\nDo not repeat a topic or opening hook style from these recent published posts:\n${history.map(r => `- [${r.date}] ${r.topic} | hook: "${r.hook}"`).join('\n')}`
     : '';
 
+  const contextBlock = contextText
+    ? `\nSOURCE MATERIAL — base the topic on the specific facts in this content:\n---\n${contextText.slice(0, 2000)}\n---\n`
+    : '';
+
   return `You are a content strategist for ${client.name}.
 
 About ${client.name}:
@@ -117,8 +147,7 @@ ${audienceNote}
 
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
-${recentList}${historyBlock}${avoidList}
-
+${recentList}${historyBlock}${avoidList}${contextBlock}
 Pick ONE specific, interesting topic for a LinkedIn post today.
 Choose something timely, specific, and authentic — not generic advice.
 
@@ -146,7 +175,7 @@ const FORMAT_GUIDES = {
 };
 
 // Returns { staticPart, dynamicPart } — static is cached across calls for the same client.
-function buildPostPromptParts(client, topicData) {
+function buildPostPromptParts(client, topicData, contextText = null) {
   const hashtags = getPillarHashtags(client, topicData.pillarId);
   const guide = FORMAT_GUIDES[topicData.format] || FORMAT_GUIDES.text;
 
@@ -177,8 +206,12 @@ CLOSING:
 - End with a question that feels earned by the post — not tacked on.
 - One sentence. Answerable in a comment.`;
 
+  const contextBlock = contextText
+    ? `SOURCE MATERIAL — ground every specific fact, number, and claim in this content:\n---\n${contextText}\n---\n\n`
+    : '';
+
   const dynamicPart =
-`Topic: ${topicData.topic}
+`${contextBlock}Topic: ${topicData.topic}
 Angle / hook: ${topicData.angle}
 Format guidance: ${guide}
 Hashtags — use 2–3 from: ${hashtags}.
@@ -193,6 +226,13 @@ Write now:`;
 export async function generateForClient(clientId, opts = {}) {
   const client = loadClient(clientId);
 
+  let contextText = null;
+  if (opts.url) {
+    console.log(`Fetching source context from: ${opts.url}`);
+    contextText = await fetchUrlContext(opts.url);
+    console.log(`  Extracted ${contextText.length} chars`);
+  }
+
   let topicData;
 
   const selectedPillarId = opts.pillarId || selectPillar(client).id;
@@ -201,14 +241,16 @@ export async function generateForClient(clientId, opts = {}) {
     topicData = {
       pillarId: selectedPillarId,
       topic: opts.seed,
-      angle: 'Write from the specific details and your honest reaction to this topic.',
+      angle: opts.url
+        ? 'Write from the specific facts and details in the source material provided.'
+        : 'Write from the specific details and your honest reaction to this topic.',
       format: opts.format || (client.formats[0] || 'text'),
     };
   } else {
     const topicMsg = await anthropic.messages.create({
       model: TOPIC_MODEL,
       max_tokens: 512,
-      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId) }],
+      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId, contextText) }],
     });
 
     const raw = topicMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
@@ -221,7 +263,7 @@ export async function generateForClient(clientId, opts = {}) {
     }
   }
 
-  const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData);
+  const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData, contextText);
   const postMsg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
@@ -240,7 +282,7 @@ export async function generateForClient(clientId, opts = {}) {
     .join('\n')
     .trim();
 
-  return { client, topicData, postText, type: 'text' };
+  return { client, topicData, postText, type: 'text', sourceUrl: opts.url || null };
 }
 
 // ─── Save draft ───────────────────────────────────────────────────────────────
@@ -256,6 +298,7 @@ export function saveDraft(clientId, result) {
     generatedAt: new Date().toISOString(),
     topicData: result.topicData,
     postText: result.postText,
+    sourceUrl: result.sourceUrl || null,
     posted: false,
     postedAt: null,
     linkedInPostId: null,

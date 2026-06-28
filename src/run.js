@@ -23,6 +23,7 @@ function parseRunArgs() {
     pillarId: process.env.INPUT_PILLAR || null,
     seed:     process.env.INPUT_SEED   || null,
     format:   process.env.INPUT_FORMAT || null,
+    url:      process.env.INPUT_URL    || null,
   });
   let postImmediately = false, dryRun = false;
   for (const arg of args) {
@@ -32,8 +33,8 @@ function parseRunArgs() {
   return { ...base, postImmediately, dryRun };
 }
 
-async function generateAndSave({ clientId, pillarId, seed, format }) {
-  const result = await generateForClient(clientId, { pillarId, seed, format });
+async function generateAndSave({ clientId, pillarId, seed, format, url }) {
+  const result = await generateForClient(clientId, { pillarId, seed, format, url });
   console.log('─── Topic ───');
   console.log(`Pillar  : ${result.topicData.pillarId}`);
   console.log(`Topic   : ${result.topicData.topic}`);
@@ -129,6 +130,7 @@ Options:
   if (opts.format)  console.log(`Format: ${opts.format}`);
   if (opts.pillarId) console.log(`Pillar: ${opts.pillarId}`);
   if (opts.seed)    console.log(`Seed: "${opts.seed}"`);
+  if (opts.url)     console.log(`URL: ${opts.url}`);
   console.log('');
 
   const { result, filename } = await generateAndSave(opts);

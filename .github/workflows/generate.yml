@@ -20,6 +20,9 @@ on:
       phone:
         description: 'WhatsApp phone number to notify (E.164, no +)'
         required: false
+      url:
+        description: 'Source URL (article, press release) for Claude to ground the post on'
+        required: false
 
 permissions: {}
 
@@ -62,6 +65,7 @@ jobs:
           INPUT_FORMAT:                     ${{ inputs.format }}
           INPUT_SEED:                       ${{ inputs.seed }}
           INPUT_PHONE:                      ${{ inputs.phone }}
+          INPUT_URL:                        ${{ inputs.url }}
         run: node src/run.js
 
       - name: Commit draft
