@@ -12,6 +12,7 @@ import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
 import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
+import { getEngagementSummary } from './analytics.js';
 
 export const HISTORY_PATH = './drafts/history.json';
 
@@ -113,7 +114,20 @@ export async function fetchUrlContext(url) {
 
 // ─── Topic selection ──────────────────────────────────────────────────────────
 
-function buildTopicPrompt(client, pillarId = null, contextText = null) {
+function buildEngagementBlock(stats) {
+  if (!stats?.length) return '';
+  const sorted = [...stats].sort((a, b) => b.engagement - a.engagement);
+  const high = sorted.slice(0, 3);
+  const low  = sorted.slice(-2);
+  const lines = ['\nWHAT HAS WORKED VS. WHAT HASN\'T (use this to write better, not to repeat):'];
+  lines.push('High engagement:');
+  for (const s of high) lines.push(`  [${s.format}] "${s.hook}" → ${s.pillarId} → ${s.engagement} reactions+comments+shares`);
+  lines.push('Low engagement:');
+  for (const s of low)  lines.push(`  [${s.format}] "${s.hook}" → ${s.pillarId} → ${s.engagement}`);
+  return lines.join('\n');
+}
+
+function buildTopicPrompt(client, pillarId = null, contextText = null, engagementStats = null) {
   const pillars = pillarId
     ? client.pillars.filter(p => p.id === pillarId)
     : client.pillars;
@@ -140,6 +154,8 @@ function buildTopicPrompt(client, pillarId = null, contextText = null) {
     ? `\nSOURCE MATERIAL — base the topic on the specific facts in this content:\n---\n${contextText}\n---\n`
     : '';
 
+  const engagementBlock = buildEngagementBlock(engagementStats);
+
   return `You are a content strategist for ${client.name}.
 
 About ${client.name}:
@@ -148,7 +164,7 @@ ${audienceNote}
 
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
-${recentList}${historyBlock}${avoidList}${contextBlock}
+${recentList}${historyBlock}${avoidList}${contextBlock}${engagementBlock}
 Pick ONE topic for a LinkedIn post — but think of it as a moment, not a subject.
 
 Real people don't write posts about topics. They write because something happened, something surprised them, something they assumed turned out to be wrong, or they noticed a pattern they can't stop thinking about. Start there.
@@ -180,15 +196,24 @@ function getPillarHashtags(client, pillarId, max = 3) {
 }
 
 const FORMAT_GUIDES = {
-  text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. 150–200 words. Mobile readers scan vertically — white space is not optional.',
-  list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. 150–200 words. Each paragraph should land on its own.',
-  story:    'A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. 150–200 words. Make the reader feel like they were there.',
-  notebook: 'Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. 150–200 words. The specificity of the detail is the point — resist the urge to explain what it means.',
+  text:       'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. 150–200 words. Mobile readers scan vertically — white space is not optional.',
+  list:       'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. 150–200 words. Each paragraph should land on its own.',
+  story:      'A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. 150–200 words. Make the reader feel like they were there.',
+  notebook:   'Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. 150–200 words. The specificity of the detail is the point — resist the urge to explain what it means.',
+  short:      'One to three sentences. That is the entire post. No explanation. No build-up. No hashtags. Just the single thing that would stop the right person mid-scroll. Less is more. If you can say it in one sentence, say it in one sentence.',
+  raw:        'Write like you are thinking out loud — not drafting. Use "actually" and "wait" and "no —". Interrupt yourself. Let a sentence trail off. Change direction. Do not tidy it up. The roughness is the point. 80–120 words maximum.',
+  contrarian: 'Take the position in this space that most people would push back on. State it directly in the first sentence. Do not hedge. Do not add "but of course." Do not soften it at the end. Let it sit there. 100–150 words.',
+  prediction: 'Make one specific, datable prediction about something in this space. Name exactly what you think will happen and by when. Commit to it. No caveats, no "it depends". Wrong confident predictions get more engagement than safe hedged ones. 80–120 words.',
 };
+
+// Formats where hashtags would break the style.
+const NO_HASHTAG_FORMATS = new Set(['short', 'raw']);
 
 // Returns { staticPart, dynamicPart } — static is cached across calls for the same client.
 function buildPostPromptParts(client, topicData, contextText = null) {
-  const hashtags = getPillarHashtags(client, topicData.pillarId);
+  const useHashtags = NO_HASHTAG_FORMATS.has(topicData.format)
+    ? null
+    : getPillarHashtags(client, topicData.pillarId);
   const guide = FORMAT_GUIDES[topicData.format] || FORMAT_GUIDES.text;
 
   const staticPart =
@@ -244,7 +269,7 @@ CLOSING:
 `${contextBlock}Topic: ${topicData.topic}
 Angle / hook: ${topicData.angle}
 Format guidance: ${guide}
-Hashtags — use 2–3 from: ${hashtags}.
+${useHashtags ? `Hashtags — use 2–3 from: ${useHashtags}.` : 'No hashtags — they would break the format.'}
 
 Write now:`;
 
@@ -263,6 +288,9 @@ export async function generateForClient(clientId, opts = {}) {
     console.log(`  Extracted ${contextText.length} chars`);
   }
 
+  // Fetch engagement history to inform topic selection — silent fail if unavailable.
+  const engagementStats = await getEngagementSummary(clientId, 10).catch(() => null);
+
   let topicData;
 
   const selectedPillarId = opts.pillarId || selectPillar(client).id;
@@ -280,7 +308,7 @@ export async function generateForClient(clientId, opts = {}) {
     const topicMsg = await anthropic.messages.create({
       model: TOPIC_MODEL,
       max_tokens: 512,
-      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId, contextText) }],
+      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId, contextText, engagementStats) }],
     });
 
     const raw = topicMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();

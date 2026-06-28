@@ -10,7 +10,11 @@
       "id": "ai-watch",
       "label": "AI Watch",
       "description": "Alex's reaction to AI news — new models, big deals, research drops. He has been building with these tools long enough to know what actually changes and what is just marketing. Write like he just read the announcement and is thinking out loud about it. What surprised him. What makes sense. What nobody is asking. Never a summary. Always his actual opinion in plain language.",
-      "hashtags": ["#AI", "#BuildingWithAI", "#TechTakes"],
+      "hashtags": [
+        "#AI",
+        "#BuildingWithAI",
+        "#TechTakes"
+      ],
       "frequency": 2,
       "last_posted": null
     },
@@ -18,7 +22,11 @@
       "id": "policy-and-power",
       "label": "Policy & Power",
       "description": "AI regulation, urban policy, flood infrastructure, civic systems — where they work and where they fail. FloodReady Delhi gives him real standing here. Write like someone who tried to build something inside a broken system and learned things the hard way. Personal, specific, honest. Not a policy analysis. Not an expert take. Just what he actually noticed.",
-      "hashtags": ["#PublicPolicy", "#CivicTech", "#UrbanPolicy"],
+      "hashtags": [
+        "#PublicPolicy",
+        "#CivicTech",
+        "#UrbanPolicy"
+      ],
       "frequency": 1,
       "last_posted": null
     },
@@ -26,7 +34,11 @@
       "id": "building-in-public",
       "label": "Building in Public",
       "description": "What he is building right now, what broke, what he figured out. Provoke AI, Blast Learning, FloodReady, whatever is next. The actual process — not a launch post, not lessons learned in retrospect. Write from inside the work. 11pm Vercel timeout. A feature that took three days and one line to fix. Something that worked better than expected. Real and specific.",
-      "hashtags": ["#BuildingInPublic", "#WebDev", "#IndieHacker"],
+      "hashtags": [
+        "#BuildingInPublic",
+        "#WebDev",
+        "#IndieHacker"
+      ],
       "frequency": 1,
       "last_posted": null
     },
@@ -34,7 +46,11 @@
       "id": "the-notebook",
       "label": "The Notebook",
       "description": "Personal writing from the field. Rasabeda, Jharkhand. The Subarnarekha cleanup. Wildlife photography. Guitar. The texture of being a person who notices things. No lesson required. No point to prove. Just write what happened and what it felt like. The Rasabeda essay is the exact benchmark — that plainness, that honesty, those small specific details.",
-      "hashtags": ["#TheNotebook", "#FieldNotes", "#Conservation"],
+      "hashtags": [
+        "#TheNotebook",
+        "#FieldNotes",
+        "#Conservation"
+      ],
       "frequency": 1,
       "last_posted": null
     },
@@ -42,7 +58,11 @@
       "id": "sharp-takes",
       "label": "Sharp Takes",
       "description": "Something Alex is actually thinking that week. An opinion he wants to put on record. Something that annoyed him. A question he cannot stop thinking about. Say it plainly in Alex's voice — same simple English, same personal register, same honesty. Not a hot take performance. Just what he actually thinks.",
-      "hashtags": ["#Opinion", "#TechTakes", "#SharpTakes"],
+      "hashtags": [
+        "#Opinion",
+        "#TechTakes",
+        "#SharpTakes"
+      ],
       "frequency": 1,
       "last_posted": null
     }
@@ -63,7 +83,11 @@
     "text",
     "list",
     "story",
-    "notebook"
+    "notebook",
+    "raw",
+    "short",
+    "contrarian",
+    "prediction"
   ],
   "avoidTopics": [],
   "recentTopics": [

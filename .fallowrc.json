@@ -7,6 +7,7 @@
     "src/generate.js",
     "src/post.js",
     "src/analytics.js",
+    "src/notify-stats.js",
     "src/auth.js",
     "scripts/*.js"
   ]

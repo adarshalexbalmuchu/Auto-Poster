@@ -10,7 +10,11 @@
       "id": "delivery-lens",
       "label": "The Delivery Lens",
       "description": "What AI transformation actually looks like inside legacy-heavy industries — telecoms, logistics, facilities management, construction supply. Not a consultant's slide deck view. The view from inside, from someone who was accountable when the programme hit the real organisation. The engine of every post here is cross-industry contrast: what AI resistance looks like in a telecoms operator is completely different from a facilities management firm, and that specificity is what nobody else is writing. Audience for this pillar: senior leaders in these industries who have been sold transformation before and are tired of advice written for software companies. Every post must name an industry or a specific organisational context. Never 'enterprise' generically.",
-      "hashtags": ["#EnterpriseAI", "#DigitalTransformation", "#TechLeadership"],
+      "hashtags": [
+        "#EnterpriseAI",
+        "#DigitalTransformation",
+        "#TechLeadership"
+      ],
       "frequency": 1,
       "last_posted": null
     },
@@ -18,7 +22,11 @@
       "id": "where-it-breaks",
       "label": "Where It Breaks",
       "description": "Not 'adoption gap' generically — the specific layer where AI programmes die. Procurement kills it quietly. Middle management pays lip service and waits it out. The programme sponsor approves the budget then disappears. The governance framework was written by legal without a single conversation with operations. Irfan names the layer, describes the pattern from real delivery experience, and tells you how to spot it before it happens. Every post here names a specific function or role — never vague organisational abstractions. The closing question must name a specific person: 'your procurement director', 'your middle management layer', 'the person accountable when this fails.' This is the pillar that builds his reputation as someone who has seen these patterns across industries and can diagnose them before the post-mortem.",
-      "hashtags": ["#AIAdoption", "#EnterpriseAI", "#AIGovernance"],
+      "hashtags": [
+        "#AIAdoption",
+        "#EnterpriseAI",
+        "#AIGovernance"
+      ],
       "frequency": 1,
       "last_posted": null
     },
@@ -26,7 +34,11 @@
       "id": "sharp-takes",
       "label": "Sharp Takes",
       "description": "Irfan's actual opinions — the ones he would say in a boardroom and stand behind if challenged. A governance trend he thinks is performative theatre. A leadership behaviour he has watched destroy programmes across three industries. A prediction about where enterprise AI is heading that most people are not making yet. A news story that annoyed him because the framing was wrong. No fixed topic, no format rules. The only rule: it must be a real take, not a safe one. Something that will make AI consultants uncomfortable and make senior practitioners who have delivered programmes nod. This is the pillar that drives reach and makes his account feel like a real person with real opinions, not a content machine. Must be active every week.",
-      "hashtags": ["#AILeadership", "#EnterpriseStrategy", "#TechLeadership"],
+      "hashtags": [
+        "#AILeadership",
+        "#EnterpriseStrategy",
+        "#TechLeadership"
+      ],
       "frequency": 1,
       "last_posted": null
     }
@@ -43,7 +55,10 @@
   },
   "formats": [
     "text",
-    "story"
+    "story",
+    "short",
+    "contrarian",
+    "prediction"
   ],
   "avoidTopics": [
     "AI product reviews or tool comparisons",
