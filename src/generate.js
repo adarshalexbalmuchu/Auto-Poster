@@ -31,7 +31,8 @@ export const HARD_RULES =
   `- Do NOT use bullet points or numbered lists of any kind.\n` +
   `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".\n` +
   `- ONE strong number maximum. Lead with the insight, use the number as proof.\n` +
-  `- Total post length (body + hashtags) MUST be under 2800 characters. Target 150–200 words.\n` +
+  `- The first 2 lines must work as a standalone hook — LinkedIn shows ~210 characters before "see more" and most readers never click.\n` +
+  `- Target 150–200 words total (body + hashtags). Posts in the 900–1200 character range consistently outperform shorter and longer ones.\n` +
   `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
   `- No preamble. No "here's a post:". Just the post itself.`;
 
@@ -148,14 +149,23 @@ ${audienceNote}
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
 ${recentList}${historyBlock}${avoidList}${contextBlock}
-Pick ONE specific, interesting topic for a LinkedIn post today.
-Choose something timely, specific, and authentic — not generic advice.
+Pick ONE specific, high-reach topic for a LinkedIn post today.
+
+WHAT MAKES A TOPIC HIGH-REACH:
+- Specific enough that someone in that exact situation feels seen — not advice for everyone
+- Contains a tension, contradiction, or surprise — something that makes a reader stop scrolling
+- Only someone with real experience in this space could say it — not something a consultant with a slide deck could write
+- Timely or grounded in something concrete — a pattern, a recent event, a specific industry moment
+
+The "angle" must be a concrete hook tension — not a description of what to write.
+Bad angle: "Write from ${client.name}'s perspective on AI adoption."
+Good angle: "The block everyone assumes is the technology. The actual block is always something else — name it."
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "pillarId": "<pillar id>",
-  "topic": "<one sentence describing the specific topic>",
-  "angle": "<the specific hook or angle that makes this interesting>",
+  "topic": "<one sentence — specific enough that the right reader immediately recognises their situation>",
+  "angle": "<the tension, contradiction, or surprise that makes this worth reading — the thing that stops the scroll>",
   "format": "<one of: ${(client.formats || ['text', 'list', 'story']).join(', ')}>"
 }`;
 }
@@ -168,10 +178,10 @@ function getPillarHashtags(client, pillarId, max = 3) {
 }
 
 const FORMAT_GUIDES = {
-  text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
-  list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
-  story:    'A first-person scene. Open with where you were or what you saw. One moment, what it meant. 150–200 words target.',
-  notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
+  text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. 150–200 words. Mobile readers scan vertically — white space is not optional.',
+  list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. 150–200 words. Each paragraph should land on its own.',
+  story:    'A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. 150–200 words. Make the reader feel like they were there.',
+  notebook: 'Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. 150–200 words. The specificity of the detail is the point — resist the urge to explain what it means.',
 };
 
 // Returns { staticPart, dynamicPart } — static is cached across calls for the same client.
@@ -187,12 +197,19 @@ ${client.voice}
 
 HARD RULES:
 ${HARD_RULES}
-- LinkedIn's reach sweet spot is 900–1200 characters. Longer posts lose completion rate and algorithmic reach.
 
-HOOK — the first 1–2 lines:
+HOOK — the first 2 lines (80% of readers see only this):
+- LinkedIn truncates at ~210 characters. Write the first 2 lines as if they are the entire post — they must stand alone.
 - Follow this client's voice rules for how to open. Do not override them.
-- The hook must earn the scroll — make the reader want to keep reading.
-- No generic openers like "In today's world" or "Something interesting happened".
+- Patterns that stop the scroll: a surprising number with an implication, a specific named scenario, a direct contradiction of received wisdom, a personal admission that feels honest.
+- Avoid: opening with a question, "Hot take:", "Unpopular opinion:", news summaries that anyone could have written, anything that sounds like a blog title.
+- Test the hook: would someone who reads only these 2 lines feel compelled to click "see more"? If no, rewrite.
+
+REACH:
+- Comments drive algorithmic reach far more than likes. Write something that makes one specific type of reader feel compelled to respond — not everyone, the right person.
+- Dwell time matters. Write something people stop and re-read, not skim. One line that lands hard is worth three lines of context.
+- Specificity is the engine of shareability. "A 28,000-person logistics company" outperforms "large enterprises". A named industry, a real number, a specific moment makes readers share because it makes them look informed.
+- Generic insight = zero reach. Every post needs one thing in it that only someone with lived experience in this exact situation could say.
 
 TAGGING:
 - When the post directly references a specific company, brand, or well-known person by name, write their name as @Name so it can be tagged on LinkedIn.
@@ -203,8 +220,9 @@ TAGGING:
 
 CLOSING:
 - Follow this client's voice rules for how to close.
-- End with a question that feels earned by the post — not tacked on.
-- One sentence. Answerable in a comment.`;
+- End with a question aimed at one specific type of reader — the person this post was written for. "What does this look like inside your logistics operation?" beats "What do you think?".
+- No "let me know in the comments". No "I'd love to hear your thoughts". Just the question.
+- One sentence. The right reader should feel like their specific answer matters.`;
 
   const contextBlock = contextText
     ? `SOURCE MATERIAL — ground every specific fact, number, and claim in this content:\n---\n${contextText}\n---\n\n`
