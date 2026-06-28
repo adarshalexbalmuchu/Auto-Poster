@@ -1,0 +1,15 @@
+{
+  "id": "2026-06-28T14-30-35-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-06-28T14:30:35.279Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "Why AI pilots succeed in telecoms but fail in facilities management — and what that tells you about your own organisation",
+    "angle": "Facilities management firms have fragmented, non-integrated legacy systems and workforces that don't talk to each other — making AI pilots look good in isolation but impossible to scale. Telecoms operators have the opposite problem: so much integration that a pilot becomes a programme overnight. Your resistance pattern is your infrastructure pattern.",
+    "format": "text"
+  },
+  "postText": "AI pilots fail in facilities management for a reason that has nothing to do with AI.\n\nA facilities management firm runs on fragmented systems, fragmented contracts, and workforces that have never needed to talk to each other. A pilot works beautifully inside one contract boundary. Then you try to scale it and discover there is no connective tissue to scale across.\n\nTelecoms has the opposite problem. The systems are deeply integrated. Which means a pilot does not stay a pilot. It becomes a programme before anyone has signed off on a programme. The governance catches up late, and badly.\n\nI have watched both patterns play out across large organisations. The resistance is never about AI adoption. It is always a reflection of the underlying infrastructure, whether that infrastructure is technical or organisational.\n\nYour pilot results are not the signal. Where the pilot breaks down is the signal.\n\nWhat does the breakdown point look like in your organisation — is it the data, the governance, or the people?\n\n#EnterpriseAI\n#DigitalTransformation\n#TechLeadership",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
