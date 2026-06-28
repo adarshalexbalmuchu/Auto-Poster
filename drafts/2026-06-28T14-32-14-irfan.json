@@ -9,7 +9,7 @@
     "format": "text"
   },
   "postText": "Most organisations are not ready for agentic AI. Not because the technology is too advanced. Because their processes were never designed to be delegated to anything.\n\n@OpenAI's new autonomous agents can plan, act, and complete multi-step tasks without a human in the loop. That sounds like productivity. In a 35,000-person logistics company, it sounds like a governance nightmare waiting to happen.\n\nI have watched this pattern before. Not with AI. With RPA. The technology worked. The problem was that nobody had mapped which decisions actually required human judgement and which were just habit. Agentic AI asks the same question, at ten times the speed and ten times the scale.\n\nIn a telecoms operator, the failure point is usually approval chains nobody documented. In a facilities management firm, it is the informal knowledge that lives in the head of a regional manager who has been there fifteen years.\n\nThe agent will not know what it does not know. That is your risk.\n\nWhere is the undocumented decision-making sitting in your organisation right now?\n\n#AILeadership #EnterpriseStrategy #TechLeadership",
-  "posted": false,
-  "postedAt": null,
-  "linkedInPostId": null
+  "posted": true,
+  "postedAt": "2026-06-28T14:34:11.084Z",
+  "linkedInPostId": "urn:li:share:7477006437852876800"
 }
