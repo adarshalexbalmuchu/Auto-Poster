@@ -149,23 +149,25 @@ ${audienceNote}
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
 ${recentList}${historyBlock}${avoidList}${contextBlock}
-Pick ONE specific, high-reach topic for a LinkedIn post today.
+Pick ONE topic for a LinkedIn post — but think of it as a moment, not a subject.
 
-WHAT MAKES A TOPIC HIGH-REACH:
-- Specific enough that someone in that exact situation feels seen — not advice for everyone
-- Contains a tension, contradiction, or surprise — something that makes a reader stop scrolling
-- Only someone with real experience in this space could say it — not something a consultant with a slide deck could write
-- Timely or grounded in something concrete — a pattern, a recent event, a specific industry moment
+Real people don't write posts about topics. They write because something happened, something surprised them, something they assumed turned out to be wrong, or they noticed a pattern they can't stop thinking about. Start there.
 
-The "angle" must be a concrete hook tension — not a description of what to write.
-Bad angle: "Write from ${client.name}'s perspective on AI adoption."
-Good angle: "The block everyone assumes is the technology. The actual block is always something else — name it."
+WHAT MAKES A MOMENT WORTH WRITING ABOUT:
+- A specific thing that happened or a specific thing noticed — not a general observation
+- Something that would make the right reader say "yes, I've seen this exact thing"
+- A contradiction: what everyone assumes vs. what actually happens
+- Something only someone with real experience in this space would know to notice
+
+The "angle" is the first sentence of the post in your head — not a description of what to write.
+Bad: "Write about how AI adoption is hard in large enterprises."
+Good: "The first thing to go wrong is never the technology."
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "pillarId": "<pillar id>",
-  "topic": "<one sentence — specific enough that the right reader immediately recognises their situation>",
-  "angle": "<the tension, contradiction, or surprise that makes this worth reading — the thing that stops the scroll>",
+  "topic": "<the specific moment, observation, or pattern — concrete enough to picture>",
+  "angle": "<the opening thought — the sentence that would make someone stop scrolling>",
   "format": "<one of: ${(client.formats || ['text', 'list', 'story']).join(', ')}>"
 }`;
 }
@@ -198,6 +200,16 @@ ${client.voice}
 HARD RULES:
 ${HARD_RULES}
 
+HUMAN TEXTURE — this is mandatory, not optional:
+- Write like this was typed in a real moment, not drafted and polished. Polish is the enemy.
+- Sentence fragments are not mistakes. "And that's exactly it." "Still haven't figured that out." "Every single time." Use them where they land harder than a full sentence would.
+- Starting a sentence with And, But, So, Because — fine. That's how thoughts actually flow.
+- Break the rhythm on purpose. One short line. Then two sentences that run a bit longer because the thought needs the space. Then short again. Never the same beat twice in a row.
+- Leave one place in the post where the writer doesn't fully have the answer, or catches themselves, or changes direction slightly. Real thinking is messy. Perfectly resolved thinking sounds fake.
+- One or two commas that a real person typing fast would skip. Not every sentence needs one.
+- Avoid perfectly parallel structure more than once. "Not X. Not Y. But Z." is a formula — formulas sound written, not thought.
+- The post should feel like it took 10 minutes to write, not 2 hours.
+
 HOOK — the first 2 lines (80% of readers see only this):
 - LinkedIn truncates at ~210 characters. Write the first 2 lines as if they are the entire post — they must stand alone.
 - Follow this client's voice rules for how to open. Do not override them.
@@ -220,9 +232,9 @@ TAGGING:
 
 CLOSING:
 - Follow this client's voice rules for how to close.
-- End with a question aimed at one specific type of reader — the person this post was written for. "What does this look like inside your logistics operation?" beats "What do you think?".
-- No "let me know in the comments". No "I'd love to hear your thoughts". Just the question.
-- One sentence. The right reader should feel like their specific answer matters.`;
+- A question is not always the right ending. Sometimes a statement lands harder. Sometimes the post just stops because the point was already made. Don't force a question where one isn't earned.
+- If you do end with a question: aim it at one specific type of reader. "What does this look like in your logistics company?" beats "What do you think?". No "let me know in the comments". No "I'd love to hear your thoughts".
+- The best endings feel slightly abrupt — like the writer said what they needed to say and stopped.`;
 
   const contextBlock = contextText
     ? `SOURCE MATERIAL — ground every specific fact, number, and claim in this content:\n---\n${contextText}\n---\n\n`
@@ -281,6 +293,26 @@ export async function generateForClient(clientId, opts = {}) {
     }
   }
 
+  // Pass 1 — raw first thought, no rules. Write like a human would before editing.
+  const contextBlock = contextText
+    ? `Source material to draw from:\n---\n${contextText}\n---\n\n`
+    : '';
+  const roughMsg = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 512,
+    messages: [{
+      role: 'user',
+      content: `${contextBlock}You are ${client.name}. Something just happened or you just noticed something and you want to write about it on LinkedIn.\n\nThe moment / observation: ${topicData.topic}\nWhat makes it interesting: ${topicData.angle}\n\nWrite your raw first thought — like you're typing a note to yourself before you edit it. No polish. No structure. No rules. Just what you'd actually say. Keep it under 100 words.`,
+    }],
+  });
+
+  const roughDraft = roughMsg.content
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('')
+    .trim();
+
+  // Pass 2 — shape the raw draft into a real post. The soul comes from pass 1.
   const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData, contextText);
   const postMsg = await anthropic.messages.create({
     model: MODEL,
@@ -289,7 +321,7 @@ export async function generateForClient(clientId, opts = {}) {
       role: 'user',
       content: [
         { type: 'text', text: staticPart, cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: dynamicPart },
+        { type: 'text', text: `${dynamicPart}\n\nRaw first thought to build from (keep the energy and voice, shape it into the post):\n"${roughDraft}"` },
       ],
     }],
   });
