@@ -9,7 +9,7 @@
     "format": "text"
   },
   "postText": "Everyone's excited about o1's reasoning. I get it. Watching a model think through a multi-step problem is genuinely impressive.\n\nBut I've been poking at it. And something feels off.\n\nIt can walk through a logic puzzle cleanly. Then hallucinate a basic fact in the next breath. That's a weird gap to just accept.\n\nMy honest read: reasoning-focused models don't fix hallucination. They move it. Instead of getting a wrong answer fast, you get a wrong answer with a very confident chain of thought attached.\n\nThat's not obviously better.\n\nThe real question nobody's asking is whether \"reasoning\" and \"factual accuracy\" are even the same problem. I don't think they are. One is about how you think. The other is about what you actually know. @OpenAI built something that can do the first one much better. The second one is still messy.\n\nCould just be where we are right now. Could be a real ceiling.\n\nWhat are you actually seeing when you use it on real work?\n\n#AI #BuildingWithAI #TechTakes",
-  "posted": false,
-  "postedAt": null,
-  "linkedInPostId": null
+  "posted": true,
+  "postedAt": "2026-06-28T14:37:33.663Z",
+  "linkedInPostId": "urn:li:share:7477007285492408320"
 }
