@@ -106,8 +106,8 @@ export async function fetchUrlContext(url) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // Cap at 4000 chars so we don't blow the prompt budget.
-  return text.length > 4000 ? text.slice(0, 4000) + '…' : text;
+  // Safety cap at 50 000 chars — covers any realistic article or press release in full.
+  return text.length > 50_000 ? text.slice(0, 50_000) + '…' : text;
 }
 
 // ─── Topic selection ──────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ function buildTopicPrompt(client, pillarId = null, contextText = null) {
     : '';
 
   const contextBlock = contextText
-    ? `\nSOURCE MATERIAL — base the topic on the specific facts in this content:\n---\n${contextText.slice(0, 2000)}\n---\n`
+    ? `\nSOURCE MATERIAL — base the topic on the specific facts in this content:\n---\n${contextText}\n---\n`
     : '';
 
   return `You are a content strategist for ${client.name}.
