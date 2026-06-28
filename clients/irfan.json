@@ -55,10 +55,7 @@
   },
   "formats": [
     "text",
-    "story",
-    "short",
-    "contrarian",
-    "prediction"
+    "story"
   ],
   "avoidTopics": [
     "AI product reviews or tool comparisons",
