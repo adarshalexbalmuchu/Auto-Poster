@@ -124,9 +124,13 @@ async function main() {
   console.log(`Last ${posts.length} posts — reactions / comments / shares\n`);
   console.log('─'.repeat(72));
 
+  // Fetch all social action counts in parallel instead of sequentially.
+  const allActions = await Promise.allSettled(posts.map(p => getSocialActions(p.id, token)));
+
   let totR = 0, totC = 0, totS = 0, scored = 0;
 
-  for (const post of posts) {
+  for (let i = 0; i < posts.length; i++) {
+    const post    = posts[i];
     const urn     = post.id;
     const draft   = draftMap.get(numericId(urn));
     const date    = post.created?.time ? new Date(post.created.time).toISOString().slice(0, 10) : '?';
@@ -136,8 +140,8 @@ async function main() {
       post.commentary || ''
     ).replace(/\n/g, ' ').slice(0, 72);
 
-    const actions  = await getSocialActions(urn, token);
-    const reactions = actions?.numLikes   ?? null;
+    const actions   = allActions[i].status === 'fulfilled' ? allActions[i].value : null;
+    const reactions = actions?.numLikes    ?? null;
     const comments  = actions?.numComments ?? null;
     const shares    = actions?.numShares   ?? null;
 

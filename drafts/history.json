@@ -12,5 +12,19 @@
     "topic": "TCS and anthropic partnership for providing 50k associate with AI access",
     "hook": "@TCS just gave 50,000 of its people direct access to @Anthropic's Claude.",
     "date": "2026-06-11"
+  },
+  {
+    "client": "irfan",
+    "pillar": "sharp-takes",
+    "topic": "New autonomous models agents of Open AI , , workplace Agentic AI",
+    "hook": "Most organisations are not ready for agentic AI. Not because the technology is too advanced. Because their processes were never designed to be delegated to anything.",
+    "date": "2026-06-28"
+  },
+  {
+    "client": "alex",
+    "pillar": "ai-watch",
+    "topic": "OpenAI's new o1 model and whether reasoning-focused LLMs actually solve the problem they claim to solve, or just shift where the hallucinations happen",
+    "hook": "Everyone's excited about o1's reasoning. I get it. Watching a model think through a multi-step problem is genuinely impressive.",
+    "date": "2026-06-28"
   }
 ]

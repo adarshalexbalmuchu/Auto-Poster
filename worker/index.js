@@ -21,23 +21,24 @@
 const WA_API = 'https://graph.facebook.com/v20.0';
 const GH_API = 'https://api.github.com';
 
+// Keep in sync with clients/*.json pillar IDs.
 const CLIENTS = {
   irfan: {
     name: 'Irfan',
     pillars: [
-      { id: 'delivery-lens',  title: 'The Delivery Lens' },
-      { id: 'where-it-breaks',title: 'Where It Breaks'   },
-      { id: 'sharp-takes',    title: 'Sharp Takes'       },
+      { id: 'delivery-lens',   title: 'The Delivery Lens' },
+      { id: 'where-it-breaks', title: 'Where It Breaks'   },
+      { id: 'sharp-takes',     title: 'Sharp Takes'       },
     ],
   },
   alex: {
     name: 'Alex',
     pillars: [
-      { id: 'ai-watch',          title: 'AI Watch'          },
-      { id: 'policy-and-power',  title: 'Policy & Power'    },
-      { id: 'building-in-public',title: 'Building in Public'},
-      { id: 'the-notebook',      title: 'The Notebook'      },
-      { id: 'sharp-takes',       title: 'Sharp Takes'       },
+      { id: 'ai-watch',           title: 'AI Watch'          },
+      { id: 'policy-and-power',   title: 'Policy & Power'    },
+      { id: 'building-in-public', title: 'Building in Public'},
+      { id: 'the-notebook',       title: 'The Notebook'      },
+      { id: 'sharp-takes',        title: 'Sharp Takes'       },
     ],
   },
 };
@@ -91,6 +92,10 @@ async function handleCallback(request, env) {
   try { body = await request.json(); } catch { return new Response('Bad Request', { status: 400 }); }
 
   if (body.type === 'draft_ready' && body.phone && body.client) {
+    // Only allow callbacks for the configured owner number.
+    if (body.phone !== env.WHATSAPP_OWNER_NUMBER) {
+      return new Response('Forbidden', { status: 403 });
+    }
     const cur = await getState(env, body.phone);
     await setState(env, body.phone, {
       ...cur,
@@ -120,7 +125,8 @@ export default {
       return Response.json({ status: ok ? 'ok' : 'degraded', checks }, { status: ok ? 200 : 503 });
     }
 
-    if (request.method === 'GET') {
+    // Scope webhook verification strictly to root — prevents other GET paths from leaking challenge.
+    if (request.method === 'GET' && url.pathname === '/') {
       const mode      = url.searchParams.get('hub.mode');
       const token     = url.searchParams.get('hub.verify_token');
       const challenge = url.searchParams.get('hub.challenge');
@@ -179,7 +185,7 @@ export default {
         }
       } catch (e) {
         console.error('[worker] Error:', e.message);
-        await sendText(env, from, '⚠️ Something went wrong. Try again or reply *help*.');
+        await sendText(env, from, '⚠️ Something went wrong. Try again or reply *reset*.');
       }
 
       return new Response('OK', { status: 200 });
@@ -259,16 +265,26 @@ async function handleText(env, from, text) {
 
   if (state.step === 'awaiting_seed') {
     const seed = lower === 'none' ? null : text;
-    const newState = { ...state, seed, step: 'generating' };
-    await setState(env, from, newState);
+    const prevState = { ...state };
+    await setState(env, from, { ...state, seed, step: 'generating' });
     await sendText(env, from, `⏳ Generating post for *${CLIENTS[state.client]?.name || state.client}*...\n\nYou'll receive a preview shortly.`);
-    await triggerGenerate(env, state.client, state.pillar, null, seed, from);
+    try {
+      await triggerGenerate(env, state.client, state.pillar, null, seed, from);
+    } catch (e) {
+      await setState(env, from, prevState);
+      throw e;
+    }
     return;
   }
 
-  // If a draft is in progress or ready, treat any unrecognised message as an edit instruction.
-  // This means the user never needs to type "edit:" — just send the instruction naturally.
-  if (state.client && (state.step === 'generating' || state.step === 'pending_review')) {
+  // Still generating — tell the user to wait rather than firing an edit on the wrong (previous) draft.
+  if (state.client && state.step === 'generating') {
+    await sendText(env, from, '⏳ Still generating — please wait for the preview before editing.');
+    return;
+  }
+
+  // Draft ready — treat any unrecognised message as an edit instruction.
+  if (state.client && state.step === 'pending_review') {
     const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
     await sendText(env, from, `✏️ Applying edit...\n\n_"${preview}"_\n\nYou'll receive the revised draft shortly.`);
     await triggerEdit(env, from, state, text);
@@ -283,19 +299,18 @@ async function handleText(env, from, text) {
 async function handleButtonReply(env, from, id) {
   const state = await getState(env, from);
 
-  if (id.startsWith('client_')) {
-    const client = id.replace('client_', '');
+  // Button IDs use ':' as delimiter (not '_') so client IDs with hyphens parse cleanly.
+  if (id.startsWith('client:')) {
+    const client = id.split(':')[1];
     await setState(env, from, { step: 'awaiting_pillar', client });
     await sendPillarList(env, from, client);
     return;
   }
 
-  if (id.startsWith('pillar_')) {
-    // id format: pillar_<clientId>_<pillarId|claude>
-    // Client is embedded in the button ID to avoid KV eventual-consistency gaps
-    const parts = id.split('_');
-    const clientId  = parts[1];
-    const pillarPart = parts.slice(2).join('_');
+  if (id.startsWith('pillar:')) {
+    // id format: pillar:<clientId>:<pillarId|claude>
+    // Client is embedded in the button ID to avoid KV eventual-consistency gaps between taps.
+    const [, clientId, pillarPart] = id.split(':');
     const pillar = pillarPart === 'claude' ? null : pillarPart;
     await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
     await sendText(env, from, 'Any topic seed? Reply with a hint or say *none* and Claude will pick.');
@@ -310,9 +325,16 @@ async function handleButtonReply(env, from, id) {
 // ── Actions ─────────────────────────────────────────────────────────────────
 
 async function doPost(env, from, state) {
-  await clearState(env, from);
+  // Send confirmation first so the user gets feedback immediately.
   await sendText(env, from, '✅ Posting to LinkedIn now...\n\nCheck your profile in ~30 seconds.');
-  await triggerPost(env, state.client || null, state.draftPath || null);
+  try {
+    await triggerPost(env, state.client || null, state.draftPath || null);
+    await clearState(env, from);
+  } catch (e) {
+    // Dispatch failed — keep state so the user can retry.
+    await sendText(env, from, '⚠️ Failed to trigger post — please try again or type *reset* if stuck.');
+    throw e;
+  }
 }
 
 async function doRegenerate(env, from, state) {
@@ -324,9 +346,16 @@ async function doRegenerate(env, from, state) {
     await sendText(env, from, '⏳ Already generating — please wait for the preview to arrive.');
     return;
   }
+  const prevState = { ...state };
   await setState(env, from, { ...state, step: 'generating' });
   await sendText(env, from, '🔄 Regenerating... you\'ll receive a new preview shortly.');
-  await triggerGenerate(env, state.client, state.pillar, null, state.seed, from);
+  try {
+    await triggerGenerate(env, state.client, state.pillar, null, state.seed, from);
+  } catch (e) {
+    // Revert so the user isn't stuck at 'generating' forever.
+    await setState(env, from, prevState);
+    throw e;
+  }
 }
 
 // ── Interactive message senders ─────────────────────────────────────────────
@@ -334,15 +363,15 @@ async function doRegenerate(env, from, state) {
 async function sendClientButtons(env, from) {
   await sendButtons(env, from,
     'Which client would you like to post for?',
-    Object.entries(CLIENTS).map(([id, c]) => ({ id: `client_${id}`, title: c.name }))
+    Object.entries(CLIENTS).map(([id, c]) => ({ id: `client:${id}`, title: c.name }))
   );
 }
 
 async function sendPillarList(env, from, clientId) {
   const client = CLIENTS[clientId];
   const rows = [
-    { id: `pillar_${clientId}_claude`, title: 'Claude picks', description: 'AI selects the best topic today' },
-    ...client.pillars.map(p => ({ id: `pillar_${clientId}_${p.id}`, title: p.title })),
+    { id: `pillar:${clientId}:claude`, title: 'Claude picks', description: 'AI selects the best topic today' },
+    ...client.pillars.map(p => ({ id: `pillar:${clientId}:${p.id}`, title: p.title })),
   ];
   await sendList(env, from, `Pick a content pillar for *${client.name}*:`, 'Select pillar', rows);
 }

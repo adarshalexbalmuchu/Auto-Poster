@@ -80,22 +80,9 @@ async function runAllClients() {
   log('Done.');
 }
 
-const TZ_OFFSETS = {
-  'Asia/Kolkata':   { h: 5,  m: 30 },
-  'Europe/London':  { h: 1,  m: 0  },  // BST (summer); GMT offset handled by node-cron timezone
-  'America/New_York': { h: -4, m: 0 },
-  'Asia/Singapore': { h: 8,  m: 0  },
-};
-
-function buildCronExpression(timeStr, timezone = 'Asia/Kolkata') {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const offset = TZ_OFFSETS[timezone] || TZ_OFFSETS['Asia/Kolkata'];
-  let utcHours   = hours   - offset.h;
-  let utcMinutes = minutes - offset.m;
-  if (utcMinutes < 0) { utcMinutes += 60; utcHours -= 1; }
-  if (utcHours < 0)  utcHours += 24;
-  if (utcHours >= 24) utcHours -= 24;
-  return `${utcMinutes} ${utcHours} * * *`;
+function clientTimeStr(schedule) {
+  // Accepts 'time' (canonical), or legacy 'timeIST' / 'timeUK' keys.
+  return schedule.time || schedule.timeIST || schedule.timeUK || '09:00';
 }
 
 function scheduleClients() {
@@ -108,18 +95,21 @@ function scheduleClients() {
   const scheduled = new Set();
 
   for (const client of clients) {
-    const schedule  = client.postingSchedule || {};
-    const timeStr   = schedule.timeUK || schedule.timeIST || '09:00';
-    const timezone  = schedule.timezone || 'Asia/Kolkata';
-    const key       = `${timeStr}-${timezone}`;
+    const schedule = client.postingSchedule || {};
+    const timeStr  = clientTimeStr(schedule);
+    const timezone = schedule.timezone || 'Asia/Kolkata';
+    const key      = `${timeStr}-${timezone}`;
 
     if (scheduled.has(key)) continue;
     scheduled.add(key);
 
-    const expr = buildCronExpression(timeStr, timezone);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    // Pass the time in the client's own timezone — node-cron handles DST automatically.
+    const expr = `${minutes} ${hours} * * *`;
+
     const matchClients = clients.filter(c => {
       const s = c.postingSchedule || {};
-      return (s.timeUK || s.timeIST || '09:00') === timeStr && (s.timezone || 'Asia/Kolkata') === timezone;
+      return clientTimeStr(s) === timeStr && (s.timezone || 'Asia/Kolkata') === timezone;
     });
     log(`Scheduling at ${timeStr} ${timezone} (cron: ${expr}) for: ${matchClients.map(c => c.id).join(', ')}`);
 
@@ -127,13 +117,11 @@ function scheduleClients() {
       const today = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: timezone });
       const current = getActiveClients().filter(c => {
         const s = c.postingSchedule || {};
-        const t = s.timeUK || s.timeIST || '09:00';
-        const tz = s.timezone || 'Asia/Kolkata';
         const days = s.days || ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-        return t === timeStr && tz === timezone && days.includes(today);
+        return clientTimeStr(s) === timeStr && (s.timezone || 'Asia/Kolkata') === timezone && days.includes(today);
       });
       for (const c of current) runForClient(c);
-    }, { timezone: 'UTC' });
+    }, { timezone });
   }
 
   log(`Scheduler running. ${scheduled.size} time slot(s) registered.`);
