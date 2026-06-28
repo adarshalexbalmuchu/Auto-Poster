@@ -26,6 +26,15 @@ const anthropic = new Anthropic();
 export const MODEL = 'claude-sonnet-4-6';
 const TOPIC_MODEL = 'claude-haiku-4-5-20251001';
 
+export const HARD_RULES =
+  `- Do NOT use em dashes (—). Use a period or a new sentence instead.\n` +
+  `- Do NOT use bullet points or numbered lists of any kind.\n` +
+  `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".\n` +
+  `- ONE strong number maximum. Lead with the insight, use the number as proof.\n` +
+  `- Total post length (body + hashtags) MUST be under 2800 characters. Target 150–200 words.\n` +
+  `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
+  `- No preamble. No "here's a post:". Just the post itself.`;
+
 const ALLOWED_CLIENTS = new Set(['irfan', 'alex']);
 
 function validateClientId(clientId) {
@@ -82,8 +91,9 @@ function buildTopicPrompt(client, pillarId = null) {
     ? client.pillars.filter(p => p.id === pillarId)
     : client.pillars;
 
-  const recentList = client.recentTopics?.slice(-10).length
-    ? `\nRecently posted (avoid repeating):\n${client.recentTopics.slice(-10).map(t => `- ${t}`).join('\n')}`
+  const recent = client.recentTopics?.slice(-10) || [];
+  const recentList = recent.length
+    ? `\nRecently posted (avoid repeating):\n${recent.map(t => `- ${t}`).join('\n')}`
     : '';
 
   const avoidList = client.avoidTopics?.length
@@ -147,13 +157,8 @@ VOICE AND STYLE RULES — follow every one precisely:
 ${client.voice}
 
 HARD RULES:
-- Do NOT use em dashes (—). Use a period or a new sentence instead.
-- Do NOT use bullet points or numbered lists of any kind.
-- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".
-- ONE strong number maximum. Lead with the insight, use the number as proof.
-- Total post length (body + hashtags) MUST be under 2800 characters. Target 150–200 words — LinkedIn's reach sweet spot is 900–1200 characters. Longer posts lose completion rate and algorithmic reach.
-- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.
-- No preamble. No "here's a post:". Just the post itself.
+${HARD_RULES}
+- LinkedIn's reach sweet spot is 900–1200 characters. Longer posts lose completion rate and algorithmic reach.
 
 HOOK — the first 1–2 lines:
 - Follow this client's voice rules for how to open. Do not override them.
@@ -196,7 +201,7 @@ export async function generateForClient(clientId, opts = {}) {
     topicData = {
       pillarId: selectedPillarId,
       topic: opts.seed,
-      angle: opts.seed,
+      angle: 'Write from the specific details and your honest reaction to this topic.',
       format: opts.format || (client.formats[0] || 'text'),
     };
   } else {
@@ -207,8 +212,10 @@ export async function generateForClient(clientId, opts = {}) {
     });
 
     const raw = topicMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error(`Claude returned no JSON for topic selection:\n${raw}`);
     try {
-      topicData = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      topicData = JSON.parse(jsonMatch[0]);
     } catch {
       throw new Error(`Claude returned invalid JSON for topic selection:\n${raw}`);
     }

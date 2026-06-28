@@ -58,7 +58,7 @@ async function notifyAndCallback(result, filename, clientId) {
   const phone          = process.env.INPUT_PHONE;
   if (workerUrl && callbackSecret && phone) {
     try {
-      await fetch(`${workerUrl}/callback`, {
+      const res = await fetch(`${workerUrl}/callback`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${callbackSecret}`,
@@ -74,7 +74,12 @@ async function notifyAndCallback(result, filename, clientId) {
         }),
         signal: AbortSignal.timeout(10_000),
       });
-      console.log('✓ Worker KV updated');
+      if (res.ok) {
+        console.log('✓ Worker KV updated');
+      } else {
+        const body = await res.text().catch(() => '');
+        console.warn(`Worker callback failed (${res.status}): ${body}`);
+      }
     } catch (e) {
       console.warn(`Worker callback skipped: ${e.message}`);
     }

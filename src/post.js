@@ -29,12 +29,10 @@ function appendHistory(draft) {
 }
 
 export async function postDraft(draftPath, opts = {}) {
-  let draft;
-  try {
-    draft = JSON.parse(readFileSync(draftPath, 'utf8'));
-  } catch {
-    throw new Error(`Could not read draft: ${draftPath}`);
-  }
+  const draft = opts.draft || (() => {
+    try { return JSON.parse(readFileSync(draftPath, 'utf8')); }
+    catch { throw new Error(`Could not read draft: ${draftPath}`); }
+  })();
 
   if (draft.posted) {
     throw new Error(`Draft already posted at ${draft.postedAt}. LinkedIn post ID: ${draft.linkedInPostId}`);
@@ -67,7 +65,9 @@ function markPosted(draftPath, draft, postId) {
     postedAt: new Date().toISOString(),
     linkedInPostId: postId,
   };
-  writeFileSync(draftPath, JSON.stringify(updated, null, 2));
+  const tmp = `${draftPath}.tmp`;
+  writeFileSync(tmp, JSON.stringify(updated, null, 2));
+  renameSync(tmp, draftPath);
 }
 
 async function main() {
@@ -99,7 +99,7 @@ async function main() {
   console.log('─'.repeat(50));
 
   try {
-    const result = await postDraft(draftPath, { dryRun });
+    const result = await postDraft(draftPath, { dryRun, draft });
     if (!dryRun) {
       console.log('\n✓ Posted successfully');
       if (result.postId) console.log(`  Post ID: ${result.postId}`);

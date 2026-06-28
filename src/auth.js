@@ -18,6 +18,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 
 const PORT = parseInt(process.env.PORT || '3000');
 
@@ -131,7 +132,7 @@ async function main() {
 
   const { path: clientPath, data: clientData } = loadClient(clientId);
 
-  const state = Math.random().toString(36).slice(2);
+  const state = randomBytes(16).toString('hex');
   const authUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', creds.clientId);

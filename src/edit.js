@@ -12,7 +12,7 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { loadClient, MODEL } from './generate.js';
+import { loadClient, MODEL, HARD_RULES } from './generate.js';
 import { sendDraftNotification } from './whatsapp.js';
 import { requireApiKey } from './cli-utils.js';
 
@@ -67,22 +67,25 @@ function loadDraft(draftPath, clientId) {
 
 async function applyEdit(draft, client, instruction) {
   const anthropic = new Anthropic();
+  const staticContent =
+    `You are editing a LinkedIn post draft for ${client.name}.\n\n` +
+    `VOICE AND STYLE RULES — must be preserved through the edit:\n${client.voice}\n\n` +
+    `HARD RULES that must still hold after editing:\n${HARD_RULES}\n` +
+    `- No preamble. Return only the revised post text.`;
+
+  const dynamicContent =
+    `Apply ONLY this specific edit instruction — do not change anything else:\n${instruction}\n\n` +
+    `Draft:\n${draft.postText}`;
+
   const msg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
     messages: [{
       role: 'user',
-      content:
-        `You are editing a LinkedIn post draft for ${client.name}.\n\n` +
-        `VOICE AND STYLE RULES — must be preserved through the edit:\n${client.voice}\n\n` +
-        `HARD RULES that must still hold after editing:\n` +
-        `- Do NOT use em dashes (—). Use a period or a new sentence instead.\n` +
-        `- Do NOT use bullet points or numbered lists of any kind.\n` +
-        `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize.\n` +
-        `- Total post length (body + hashtags) MUST be under 2800 characters.\n` +
-        `- No preamble. Return only the revised post text.\n\n` +
-        `Apply ONLY this specific edit instruction — do not change anything else:\n${instruction}\n\n` +
-        `Draft:\n${draft.postText}`,
+      content: [
+        { type: 'text', text: staticContent, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: dynamicContent },
+      ],
     }],
   });
   return msg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
