@@ -1,12 +1,6 @@
 name: Generate Post
 
 on:
-  schedule:
-    # 8:30 AM UK time (UTC+1 BST / UTC+0 GMT)
-    # BST (Mar–Oct): 8:30 BST = 7:30 UTC → cron '30 7 * * 2-4'
-    # GMT (Oct–Mar): 8:30 GMT = 8:30 UTC → cron '30 8 * * 2-4'
-    # Runs Tue–Thu at 7:30 UTC (adjusts naturally with DST)
-    - cron: '30 7 * * 2-4'
   workflow_dispatch:
     inputs:
       client:
