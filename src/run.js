@@ -49,7 +49,7 @@ async function generateAndSave({ clientId, pillarId, seed, format, url }) {
 
 async function notifyAndCallback(result, filename, clientId) {
   try {
-    await sendDraftNotification(result, filename);
+    await sendDraftNotification(result);
     console.log('✓ WhatsApp notification sent');
   } catch (e) {
     console.log(`  WhatsApp error: ${e.message}`);

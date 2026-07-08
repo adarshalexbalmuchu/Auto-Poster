@@ -6,7 +6,7 @@
  *   npm run auth -- --client alex
  *
  * What it does:
- *   1. Opens a browser to LinkedIn's OAuth consent page
+ *   1. Prints the LinkedIn OAuth consent URL — open it in your browser
  *   2. Client approves access
  *   3. LinkedIn redirects to localhost:3000/callback with a code
  *   4. Exchanges code for access token + person URN
@@ -16,7 +16,7 @@
  */
 
 import 'dotenv/config';
-import express from 'express';
+import { createServer } from 'node:http';
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
@@ -144,37 +144,43 @@ async function main() {
   console.log('\nOpen this URL in your browser:');
   console.log(`\n${authUrl.toString()}\n`);
 
-  try {
-    const { default: open } = await import('open');
-    await open(authUrl.toString());
-  } catch {
-    console.log('(Could not auto-open browser — paste the URL above manually)');
-  }
-
-  const app = express();
   let server;
+
+  const respond = (res, html) => {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+  };
 
   await new Promise((resolve, reject) => {
     let callbackHandled = false;
-    app.get('/callback', async (req, res) => {
-      if (callbackHandled) { res.send('<h2>Already handled.</h2>'); return; }
+
+    server = createServer(async (req, res) => {
+      const url = new URL(req.url, `http://localhost:${PORT}`);
+      if (req.method !== 'GET' || url.pathname !== '/callback') {
+        res.writeHead(404); res.end('Not Found');
+        return;
+      }
+      if (callbackHandled) { respond(res, '<h2>Already handled.</h2>'); return; }
       callbackHandled = true;
-      const { code, state: returnedState, error } = req.query;
+
+      const code          = url.searchParams.get('code');
+      const returnedState = url.searchParams.get('state');
+      const error         = url.searchParams.get('error');
 
       if (error) {
-        res.send(`<h2>Auth failed: ${error}</h2><p>You can close this tab.</p>`);
+        respond(res, `<h2>Auth failed: ${error}</h2><p>You can close this tab.</p>`);
         reject(new Error(`OAuth error: ${error}`));
         return;
       }
 
       if (returnedState !== state) {
-        res.send('<h2>State mismatch. Try again.</h2>');
+        respond(res, '<h2>State mismatch. Try again.</h2>');
         reject(new Error('State mismatch'));
         return;
       }
 
       try {
-        res.send('<h2>Authorised! Saving token...</h2><p>You can close this tab.</p>');
+        respond(res, '<h2>Authorised! Saving token...</h2><p>You can close this tab.</p>');
 
         const tokenData = await exchangeCode(code, creds);
         const personUrn = await getPersonUrn(tokenData.access_token);
@@ -193,7 +199,7 @@ async function main() {
       }
     });
 
-    server = app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Waiting for LinkedIn callback on ${creds.redirectUri} ...`);
     });
   });
