@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-08T12-33-07-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-07-08T12:33:07.645Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "post this - ✦ *New draft ready — Irfan*\n*Pillar:* delivery-lens\n*Topic:* Bank of England reviews AI rules for agentic AI in finance https://share.google/keScNzMkbZJs0CZmf\n\n---\nThe @BankofEngland is reviewing its AI rules specifically for agentic AI in finance.\n\nNot chatbots. AI that takes autonomous actions, executes decisions, moves money — without a human sign-off in the loop.\n\nMost regulators are still trying to understand ChatGPT. And here the BoE is already naming agentic AI as its own regulatory category.\n\nThat tells you something about pace.\n\nI've watched AI adoption move slowly inside large financial services firms — compliance teams nervous, change control heavy, every pilot needing three sign-offs. And that caution made sense when the technology was a text box.\n\nAgentic AI is a different problem entirely. It's not a tool you use. It's a system that acts. The governance model that worked for your chatbot deployment will not hold here.\n\nI don't think most organisations are ready for that shift. Not the technology part. The accountability part. Who owns the decision when the agent made it?\n\nStill working out what that answer looks like in practice. Where are you seeing this land in your organisation?\n\n#EnterpriseAI #TechLeadership #DigitalTransformation\n---",
+    "angle": "Write from the specific details and your honest reaction to this topic.",
+    "format": "text"
+  },
+  "postText": "The @BankofEngland is naming agentic AI as its own regulatory category. Most financial services firms are still arguing about whether to allow ChatGPT on the corporate network.\n\nThat gap is almost funny. Until it isn't.\n\nAgentic AI doesn't wait for a human to click confirm. It acts. It executes. It makes a chain of automated decisions at 3am and by morning the outcome is already downstream.\n\nThe governance model that took you 18 months to build for your chatbot pilot will not hold here. Not even close.\n\nI've watched this inside large financial services firms. Compliance teams are cautious by design, change control is heavy, every tool needs three sign-offs before it touches a live system. That caution made sense when the technology was a text box you typed into.\n\nThis is a different problem. When something goes wrong, who owns the decision the agent made?\n\nI don't have a clean answer to that. And I suspect most organisations don't either, they just haven't been forced to say it out loud yet.\n\nWhere is that accountability question landing in your firm?\n\n#EnterpriseAI #TechLeadership #DigitalTransformation",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
