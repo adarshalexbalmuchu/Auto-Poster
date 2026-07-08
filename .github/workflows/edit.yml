@@ -66,6 +66,6 @@ jobs:
           git add -f drafts/*.json
           if ! git diff --staged --quiet; then
             git commit -m "edit: $(date -u +%Y-%m-%dT%H:%M:%S) [${{ inputs.client }}]"
-            git pull --rebase origin main
+            git pull --rebase --autostash origin main
             git push
           fi
