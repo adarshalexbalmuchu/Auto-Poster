@@ -73,9 +73,9 @@ jobs:
           set -e
           git config user.name  "Auto-Poster Bot"
           git config user.email "bot@auto-poster.local"
-          git add -f drafts/*.json
+          git add -f drafts/*.json clients/*.json
           if ! git diff --staged --quiet; then
             git commit -m "draft: $(date -u +%Y-%m-%dT%H:%M:%S)"
-            git pull --rebase origin main
+            git pull --rebase --autostash origin main
             git push
           fi
