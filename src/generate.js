@@ -37,10 +37,11 @@ export const HARD_RULES =
   `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
   `- No preamble. No "here's a post:". Just the post itself.`;
 
-const ALLOWED_CLIENTS = new Set(['irfan', 'alex']);
+// Strict pattern keeps the id safe to interpolate into a ./clients/ path.
+const CLIENT_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 function validateClientId(clientId) {
-  if (!clientId || !ALLOWED_CLIENTS.has(clientId)) {
+  if (!clientId || !CLIENT_ID_RE.test(clientId) || !existsSync(`./clients/${clientId}.json`)) {
     throw new Error(`Unknown client: ${clientId}`);
   }
 }
@@ -104,7 +105,7 @@ export async function fetchUrlContext(url) {
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -302,7 +303,7 @@ export async function generateForClient(clientId, opts = {}) {
       angle: opts.url
         ? 'Write from the specific facts and details in the source material provided.'
         : 'Write from the specific details and your honest reaction to this topic.',
-      format: opts.format || (client.formats[0] || 'text'),
+      format: opts.format || (client.formats?.[0] ?? 'text'),
     };
   } else {
     const topicMsg = await anthropic.messages.create({
@@ -319,6 +320,8 @@ export async function generateForClient(clientId, opts = {}) {
     } catch {
       throw new Error(`Claude returned invalid JSON for topic selection:\n${raw}`);
     }
+    // An explicit --format always wins over Claude's pick.
+    if (opts.format) topicData.format = opts.format;
   }
 
   // Pass 1 — raw first thought, no rules. Write like a human would before editing.
@@ -360,7 +363,7 @@ export async function generateForClient(clientId, opts = {}) {
     .join('\n')
     .trim();
 
-  return { client, topicData, postText, type: 'text', sourceUrl: opts.url || null };
+  return { client, topicData, postText, sourceUrl: opts.url || null };
 }
 
 // ─── Save draft ───────────────────────────────────────────────────────────────

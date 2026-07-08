@@ -6,7 +6,8 @@
  *   npm run analytics -- --client irfan
  *   npm run analytics -- --client irfan --count 20
  *
- * What it pulls:  reactions, comments, shares per post (via LinkedIn API)
+ * What it pulls:  reactions, comments, shares per post (via LinkedIn socialActions API),
+ *                 for posts published by this repo (tracked in drafts/*.json).
  * What it can't:  impressions — not exposed for personal profiles via API.
  *                 Use LinkedIn's native Creator Analytics for impression data.
  */
@@ -24,26 +25,6 @@ function authHeaders(token) {
   };
 }
 
-async function getProfile(token) {
-  const res = await fetch(`${LINKEDIN_API_V2}/me`, {
-    headers: authHeaders(token),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) throw new Error(`Profile fetch failed (${res.status})`);
-  return res.json();
-}
-
-async function getRecentPosts(personUrn, token, count) {
-  const authors = encodeURIComponent(`List(${personUrn})`);
-  const res = await fetch(
-    `${LINKEDIN_API_V2}/ugcPosts?q=authors&authors=${authors}&count=${count}&start=0`,
-    { headers: authHeaders(token), signal: AbortSignal.timeout(15_000) }
-  );
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Posts fetch failed (${res.status}): ${data?.message || JSON.stringify(data)}`);
-  return data.elements || [];
-}
-
 async function getSocialActions(postUrn, token) {
   const res = await fetch(
     `${LINKEDIN_API_V2}/socialActions/${encodeURIComponent(postUrn)}`,
@@ -58,13 +39,9 @@ function loadPostedDrafts(clientId) {
     return readdirSync('./drafts')
       .filter(f => f.endsWith(`-${clientId}.json`) && f !== 'history.json')
       .map(f => { try { return JSON.parse(readFileSync(`./drafts/${f}`, 'utf8')); } catch { return null; } })
-      .filter(d => d?.posted && d?.linkedInPostId);
+      .filter(d => d?.posted && d?.linkedInPostId)
+      .sort((a, b) => (a.postedAt || '').localeCompare(b.postedAt || ''));
   } catch { return []; }
-}
-
-function numericId(urn) {
-  const m = String(urn || '').match(/(\d+)$/);
-  return m ? m[1] : urn;
 }
 
 function fmt(n) { return typeof n === 'number' ? String(n) : '—'; }
@@ -86,59 +63,32 @@ async function main() {
   const token = envKey(clientId, 'ACCESS_TOKEN');
   if (!token) {
     console.error(`Missing LinkedIn access token for client: ${clientId}`);
+    console.error(`Run: npm run auth -- --client ${clientId}`);
     process.exit(1);
   }
 
-  // Verify token + get person URN
-  let profile;
-  try {
-    profile = await getProfile(token);
-  } catch (e) {
-    console.error(`Token check failed: ${e.message}`);
-    process.exit(1);
-  }
-
-  const personUrn = `urn:li:person:${profile.id}`;
-  console.log(`\n── LinkedIn Analytics: ${profile.localizedFirstName} ${profile.localizedLastName} ──\n`);
-
-  // Load local drafts for topic/pillar context
-  const draftMap = new Map(
-    loadPostedDrafts(clientId).map(d => [numericId(d.linkedInPostId), d])
-  );
-
-  // Fetch posts from LinkedIn
-  let posts;
-  try {
-    posts = await getRecentPosts(personUrn, token, count);
-  } catch (e) {
-    console.error(`Could not fetch posts: ${e.message}`);
-    console.error('\nThis requires the r_member_social scope. Re-run: npm run auth -- --client', clientId);
-    process.exit(1);
-  }
-
-  if (!posts.length) {
-    console.log('No posts found on this account.');
+  const drafts = loadPostedDrafts(clientId).slice(-count);
+  if (!drafts.length) {
+    console.log(`No posted drafts found for ${clientId} in ./drafts/`);
     return;
   }
 
-  console.log(`Last ${posts.length} posts — reactions / comments / shares\n`);
+  console.log(`\n── LinkedIn Analytics: ${clientId} ──`);
+  console.log(`Last ${drafts.length} posts published by Auto-Poster — reactions / comments / shares\n`);
   console.log('─'.repeat(72));
 
   // Fetch all social action counts in parallel instead of sequentially.
-  const allActions = await Promise.allSettled(posts.map(p => getSocialActions(p.id, token)));
+  const allActions = await Promise.allSettled(
+    drafts.map(d => getSocialActions(d.linkedInPostId, token))
+  );
 
   let totR = 0, totC = 0, totS = 0, scored = 0;
 
-  for (let i = 0; i < posts.length; i++) {
-    const post    = posts[i];
-    const urn     = post.id;
-    const draft   = draftMap.get(numericId(urn));
-    const date    = post.created?.time ? new Date(post.created.time).toISOString().slice(0, 10) : '?';
-    const pillar  = draft?.topicData?.pillarId || null;
-    const snippet = (
-      post.specificContent?.['com.linkedin.ugc.ShareContent']?.shareCommentary?.text ||
-      post.commentary || ''
-    ).replace(/\n/g, ' ').slice(0, 72);
+  for (let i = 0; i < drafts.length; i++) {
+    const draft   = drafts[i];
+    const date    = draft.postedAt?.slice(0, 10) || '?';
+    const pillar  = draft.topicData?.pillarId || null;
+    const snippet = (draft.postText || '').replace(/\n/g, ' ').slice(0, 72);
 
     const actions   = allActions[i].status === 'fulfilled' ? allActions[i].value : null;
     const reactions = actions?.numLikes    ?? null;
@@ -161,7 +111,7 @@ async function main() {
   console.log('\n' + '─'.repeat(72));
   if (scored > 0) {
     const avgEng = ((totR + totC + totS) / scored).toFixed(1);
-    console.log(`\nTotals (${posts.length} posts):`);
+    console.log(`\nTotals (${drafts.length} posts):`);
     console.log(`  Reactions : ${totR}`);
     console.log(`  Comments  : ${totC}`);
     console.log(`  Shares    : ${totS}`);
