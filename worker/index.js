@@ -264,12 +264,17 @@ async function handleText(env, from, text) {
   }
 
   if (state.step === 'awaiting_seed') {
-    const seed = lower === 'none' ? null : text;
+    const isUrl = /^https:\/\//i.test(text);
+    const seed = (lower === 'none' || isUrl) ? null : text;
+    const contextUrl = isUrl ? text : null;
     const prevState = { ...state };
-    await setState(env, from, { ...state, seed, step: 'generating' });
-    await sendText(env, from, `⏳ Generating post for *${CLIENTS[state.client]?.name || state.client}*...\n\nYou'll receive a preview shortly.`);
+    await setState(env, from, { ...state, seed, contextUrl, step: 'generating' });
+    const feedbackMsg = contextUrl
+      ? `🔗 Reading source URL...\n\nGenerating post for *${CLIENTS[state.client]?.name || state.client}*. Preview incoming shortly.`
+      : `⏳ Generating post for *${CLIENTS[state.client]?.name || state.client}*...\n\nYou'll receive a preview shortly.`;
+    await sendText(env, from, feedbackMsg);
     try {
-      await triggerGenerate(env, state.client, state.pillar, null, seed, from);
+      await triggerGenerate(env, state.client, state.pillar, null, seed, from, contextUrl);
     } catch (e) {
       await setState(env, from, prevState);
       throw e;
@@ -313,7 +318,7 @@ async function handleButtonReply(env, from, id) {
     const [, clientId, pillarPart] = id.split(':');
     const pillar = pillarPart === 'claude' ? null : pillarPart;
     await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
-    await sendText(env, from, 'Any topic seed? Reply with a hint or say *none* and Claude will pick.');
+    await sendText(env, from, 'Any topic seed or source URL?\n\nReply with a topic hint, paste an *https://...* link (Claude will read it), or say *none*.');
     return;
   }
 
@@ -350,7 +355,7 @@ async function doRegenerate(env, from, state) {
   await setState(env, from, { ...state, step: 'generating' });
   await sendText(env, from, '🔄 Regenerating... you\'ll receive a new preview shortly.');
   try {
-    await triggerGenerate(env, state.client, state.pillar, null, state.seed, from);
+    await triggerGenerate(env, state.client, state.pillar, null, state.seed, from, state.contextUrl || null);
   } catch (e) {
     // Revert so the user isn't stuck at 'generating' forever.
     await setState(env, from, prevState);
@@ -380,9 +385,10 @@ async function sendHelp(env, from) {
   await sendText(env, from,
     `*Auto-Poster Commands*\n\n` +
     `• *new post* — guided post generation\n` +
+    `  When asked for a seed, paste an https://... URL and Claude will read it as source material\n` +
     `• *post* — publish latest draft to LinkedIn\n` +
     `• *skip* — discard latest draft\n` +
-    `• *regenerate* — rewrite with same topic\n` +
+    `• *regenerate* — rewrite with same topic/source\n` +
     `• *[your instruction]* — refine the draft once preview arrives\n` +
     `  e.g. _make it shorter_\n` +
     `  e.g. _sharpen the opening hook_\n` +
@@ -433,12 +439,13 @@ async function waPost(env, payload) {
 
 // ── GitHub Actions triggers ─────────────────────────────────────────────────
 
-async function triggerGenerate(env, client, pillar, format, seed, phone) {
+async function triggerGenerate(env, client, pillar, format, seed, phone, url) {
   const inputs = { client: client || 'irfan' };
   if (pillar) inputs.pillar = pillar;
   if (format) inputs.format = format;
   if (seed)   inputs.seed   = seed;
   if (phone)  inputs.phone  = phone;
+  if (url)    inputs.url    = url;
   await ghDispatch(env, 'generate.yml', inputs);
 }
 

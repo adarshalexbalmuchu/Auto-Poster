@@ -172,4 +172,37 @@ async function main() {
   console.log(`   For impression data, use LinkedIn's native Creator Analytics tab.\n`);
 }
 
-main().catch(e => { console.error(e.message); process.exit(1); });
+// ─── Exportable summary for generation feedback ──────────────────────────────
+
+export async function getEngagementSummary(clientId, limit = 10) {
+  const token = envKey(clientId, 'ACCESS_TOKEN');
+  if (!token) return null;
+
+  const drafts = loadPostedDrafts(clientId).slice(-limit);
+  if (!drafts.length) return null;
+
+  const results = await Promise.allSettled(
+    drafts.map(d => getSocialActions(d.linkedInPostId, token))
+  );
+
+  return drafts
+    .map((d, i) => {
+      const a = results[i].status === 'fulfilled' ? results[i].value : null;
+      if (!a) return null;
+      return {
+        date:      d.postedAt?.slice(0, 10) || d.generatedAt?.slice(0, 10) || '?',
+        topic:     d.topicData?.topic || '',
+        format:    d.topicData?.format || 'text',
+        pillarId:  d.topicData?.pillarId || '',
+        hook:      d.postText?.split('\n')[0]?.slice(0, 80) || '',
+        engagement: (a.numLikes || 0) + (a.numComments || 0) + (a.numShares || 0),
+      };
+    })
+    .filter(Boolean);
+}
+
+export { getSocialActions };
+
+if (process.argv[1]?.endsWith('analytics.js')) {
+  main().catch(e => { console.error(e.message); process.exit(1); });
+}

@@ -12,6 +12,7 @@ import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
 import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
+import { getEngagementSummary } from './analytics.js';
 
 export const HISTORY_PATH = './drafts/history.json';
 
@@ -31,7 +32,8 @@ export const HARD_RULES =
   `- Do NOT use bullet points or numbered lists of any kind.\n` +
   `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".\n` +
   `- ONE strong number maximum. Lead with the insight, use the number as proof.\n` +
-  `- Total post length (body + hashtags) MUST be under 2800 characters. Target 150–200 words.\n` +
+  `- The first 2 lines must work as a standalone hook — LinkedIn shows ~210 characters before "see more" and most readers never click.\n` +
+  `- Target 150–200 words total (body + hashtags). Posts in the 900–1200 character range consistently outperform shorter and longer ones.\n` +
   `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
   `- No preamble. No "here's a post:". Just the post itself.`;
 
@@ -84,9 +86,48 @@ export function updatePillarLastPosted(clientId, pillarId) {
   renameSync(tmp, path);
 }
 
+// ─── URL context fetching ─────────────────────────────────────────────────────
+
+export async function fetchUrlContext(url) {
+  // Only allow HTTPS to avoid accidental local-network fetches.
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:') throw new Error('Only HTTPS URLs are supported for context fetching');
+
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'auto-poster/1.0 (content research)' },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch source URL (${res.status}): ${url}`);
+
+  const html = await res.text();
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Safety cap at 50 000 chars — covers any realistic article or press release in full.
+  return text.length > 50_000 ? text.slice(0, 50_000) + '…' : text;
+}
+
 // ─── Topic selection ──────────────────────────────────────────────────────────
 
-function buildTopicPrompt(client, pillarId = null) {
+function buildEngagementBlock(stats) {
+  if (!stats?.length) return '';
+  const sorted = [...stats].sort((a, b) => b.engagement - a.engagement);
+  const high = sorted.slice(0, 3);
+  const low  = sorted.slice(-2);
+  const lines = ['\nWHAT HAS WORKED VS. WHAT HASN\'T (use this to write better, not to repeat):'];
+  lines.push('High engagement:');
+  for (const s of high) lines.push(`  [${s.format}] "${s.hook}" → ${s.pillarId} → ${s.engagement} reactions+comments+shares`);
+  lines.push('Low engagement:');
+  for (const s of low)  lines.push(`  [${s.format}] "${s.hook}" → ${s.pillarId} → ${s.engagement}`);
+  return lines.join('\n');
+}
+
+function buildTopicPrompt(client, pillarId = null, contextText = null, engagementStats = null) {
   const pillars = pillarId
     ? client.pillars.filter(p => p.id === pillarId)
     : client.pillars;
@@ -109,6 +150,12 @@ function buildTopicPrompt(client, pillarId = null) {
     ? `\nDo not repeat a topic or opening hook style from these recent published posts:\n${history.map(r => `- [${r.date}] ${r.topic} | hook: "${r.hook}"`).join('\n')}`
     : '';
 
+  const contextBlock = contextText
+    ? `\nSOURCE MATERIAL — base the topic on the specific facts in this content:\n---\n${contextText}\n---\n`
+    : '';
+
+  const engagementBlock = buildEngagementBlock(engagementStats);
+
   return `You are a content strategist for ${client.name}.
 
 About ${client.name}:
@@ -117,16 +164,26 @@ ${audienceNote}
 
 Content pillars (use the exact id value in your response):
 ${pillars.map(p => `- id: "${p.id}" | ${p.label}: ${p.description}`).join('\n')}
-${recentList}${historyBlock}${avoidList}
+${recentList}${historyBlock}${avoidList}${contextBlock}${engagementBlock}
+Pick ONE topic for a LinkedIn post — but think of it as a moment, not a subject.
 
-Pick ONE specific, interesting topic for a LinkedIn post today.
-Choose something timely, specific, and authentic — not generic advice.
+Real people don't write posts about topics. They write because something happened, something surprised them, something they assumed turned out to be wrong, or they noticed a pattern they can't stop thinking about. Start there.
+
+WHAT MAKES A MOMENT WORTH WRITING ABOUT:
+- A specific thing that happened or a specific thing noticed — not a general observation
+- Something that would make the right reader say "yes, I've seen this exact thing"
+- A contradiction: what everyone assumes vs. what actually happens
+- Something only someone with real experience in this space would know to notice
+
+The "angle" is the first sentence of the post in your head — not a description of what to write.
+Bad: "Write about how AI adoption is hard in large enterprises."
+Good: "The first thing to go wrong is never the technology."
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "pillarId": "<pillar id>",
-  "topic": "<one sentence describing the specific topic>",
-  "angle": "<the specific hook or angle that makes this interesting>",
+  "topic": "<the specific moment, observation, or pattern — concrete enough to picture>",
+  "angle": "<the opening thought — the sentence that would make someone stop scrolling>",
   "format": "<one of: ${(client.formats || ['text', 'list', 'story']).join(', ')}>"
 }`;
 }
@@ -139,15 +196,24 @@ function getPillarHashtags(client, pillarId, max = 3) {
 }
 
 const FORMAT_GUIDES = {
-  text:     'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. 150–200 words target.',
-  list:     'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought. 150–200 words target.',
-  story:    'A first-person scene. Open with where you were or what you saw. One moment, what it meant. 150–200 words target.',
-  notebook: 'Field-note style. Observational, grounded, specific. Short paragraphs. 150–200 words target.',
+  text:       'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. 150–200 words. Mobile readers scan vertically — white space is not optional.',
+  list:       'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. 150–200 words. Each paragraph should land on its own.',
+  story:      'A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. 150–200 words. Make the reader feel like they were there.',
+  notebook:   'Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. 150–200 words. The specificity of the detail is the point — resist the urge to explain what it means.',
+  short:      'One to three sentences. That is the entire post. No explanation. No build-up. No hashtags. Just the single thing that would stop the right person mid-scroll. Less is more. If you can say it in one sentence, say it in one sentence.',
+  raw:        'Write like you are thinking out loud — not drafting. Use "actually" and "wait" and "no —". Interrupt yourself. Let a sentence trail off. Change direction. Do not tidy it up. The roughness is the point. 80–120 words maximum.',
+  contrarian: 'Take the position in this space that most people would push back on. State it directly in the first sentence. Do not hedge. Do not add "but of course." Do not soften it at the end. Let it sit there. 100–150 words.',
+  prediction: 'Make one specific, datable prediction about something in this space. Name exactly what you think will happen and by when. Commit to it. No caveats, no "it depends". Wrong confident predictions get more engagement than safe hedged ones. 80–120 words.',
 };
 
+// Formats where hashtags would break the style.
+const NO_HASHTAG_FORMATS = new Set(['short', 'raw']);
+
 // Returns { staticPart, dynamicPart } — static is cached across calls for the same client.
-function buildPostPromptParts(client, topicData) {
-  const hashtags = getPillarHashtags(client, topicData.pillarId);
+function buildPostPromptParts(client, topicData, contextText = null) {
+  const useHashtags = NO_HASHTAG_FORMATS.has(topicData.format)
+    ? null
+    : getPillarHashtags(client, topicData.pillarId);
   const guide = FORMAT_GUIDES[topicData.format] || FORMAT_GUIDES.text;
 
   const staticPart =
@@ -158,12 +224,29 @@ ${client.voice}
 
 HARD RULES:
 ${HARD_RULES}
-- LinkedIn's reach sweet spot is 900–1200 characters. Longer posts lose completion rate and algorithmic reach.
 
-HOOK — the first 1–2 lines:
+HUMAN TEXTURE — this is mandatory, not optional:
+- Write like this was typed in a real moment, not drafted and polished. Polish is the enemy.
+- Sentence fragments are not mistakes. "And that's exactly it." "Still haven't figured that out." "Every single time." Use them where they land harder than a full sentence would.
+- Starting a sentence with And, But, So, Because — fine. That's how thoughts actually flow.
+- Break the rhythm on purpose. One short line. Then two sentences that run a bit longer because the thought needs the space. Then short again. Never the same beat twice in a row.
+- Leave one place in the post where the writer doesn't fully have the answer, or catches themselves, or changes direction slightly. Real thinking is messy. Perfectly resolved thinking sounds fake.
+- One or two commas that a real person typing fast would skip. Not every sentence needs one.
+- Avoid perfectly parallel structure more than once. "Not X. Not Y. But Z." is a formula — formulas sound written, not thought.
+- The post should feel like it took 10 minutes to write, not 2 hours.
+
+HOOK — the first 2 lines (80% of readers see only this):
+- LinkedIn truncates at ~210 characters. Write the first 2 lines as if they are the entire post — they must stand alone.
 - Follow this client's voice rules for how to open. Do not override them.
-- The hook must earn the scroll — make the reader want to keep reading.
-- No generic openers like "In today's world" or "Something interesting happened".
+- Patterns that stop the scroll: a surprising number with an implication, a specific named scenario, a direct contradiction of received wisdom, a personal admission that feels honest.
+- Avoid: opening with a question, "Hot take:", "Unpopular opinion:", news summaries that anyone could have written, anything that sounds like a blog title.
+- Test the hook: would someone who reads only these 2 lines feel compelled to click "see more"? If no, rewrite.
+
+REACH:
+- Comments drive algorithmic reach far more than likes. Write something that makes one specific type of reader feel compelled to respond — not everyone, the right person.
+- Dwell time matters. Write something people stop and re-read, not skim. One line that lands hard is worth three lines of context.
+- Specificity is the engine of shareability. "A 28,000-person logistics company" outperforms "large enterprises". A named industry, a real number, a specific moment makes readers share because it makes them look informed.
+- Generic insight = zero reach. Every post needs one thing in it that only someone with lived experience in this exact situation could say.
 
 TAGGING:
 - When the post directly references a specific company, brand, or well-known person by name, write their name as @Name so it can be tagged on LinkedIn.
@@ -174,14 +257,19 @@ TAGGING:
 
 CLOSING:
 - Follow this client's voice rules for how to close.
-- End with a question that feels earned by the post — not tacked on.
-- One sentence. Answerable in a comment.`;
+- A question is not always the right ending. Sometimes a statement lands harder. Sometimes the post just stops because the point was already made. Don't force a question where one isn't earned.
+- If you do end with a question: aim it at one specific type of reader. "What does this look like in your logistics company?" beats "What do you think?". No "let me know in the comments". No "I'd love to hear your thoughts".
+- The best endings feel slightly abrupt — like the writer said what they needed to say and stopped.`;
+
+  const contextBlock = contextText
+    ? `SOURCE MATERIAL — ground every specific fact, number, and claim in this content:\n---\n${contextText}\n---\n\n`
+    : '';
 
   const dynamicPart =
-`Topic: ${topicData.topic}
+`${contextBlock}Topic: ${topicData.topic}
 Angle / hook: ${topicData.angle}
 Format guidance: ${guide}
-Hashtags — use 2–3 from: ${hashtags}.
+${useHashtags ? `Hashtags — use 2–3 from: ${useHashtags}.` : 'No hashtags — they would break the format.'}
 
 Write now:`;
 
@@ -193,6 +281,16 @@ Write now:`;
 export async function generateForClient(clientId, opts = {}) {
   const client = loadClient(clientId);
 
+  let contextText = null;
+  if (opts.url) {
+    console.log(`Fetching source context from: ${opts.url}`);
+    contextText = await fetchUrlContext(opts.url);
+    console.log(`  Extracted ${contextText.length} chars`);
+  }
+
+  // Fetch engagement history to inform topic selection — silent fail if unavailable.
+  const engagementStats = await getEngagementSummary(clientId, 10).catch(() => null);
+
   let topicData;
 
   const selectedPillarId = opts.pillarId || selectPillar(client).id;
@@ -201,14 +299,16 @@ export async function generateForClient(clientId, opts = {}) {
     topicData = {
       pillarId: selectedPillarId,
       topic: opts.seed,
-      angle: 'Write from the specific details and your honest reaction to this topic.',
+      angle: opts.url
+        ? 'Write from the specific facts and details in the source material provided.'
+        : 'Write from the specific details and your honest reaction to this topic.',
       format: opts.format || (client.formats[0] || 'text'),
     };
   } else {
     const topicMsg = await anthropic.messages.create({
       model: TOPIC_MODEL,
       max_tokens: 512,
-      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId) }],
+      messages: [{ role: 'user', content: buildTopicPrompt(client, selectedPillarId, contextText, engagementStats) }],
     });
 
     const raw = topicMsg.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
@@ -221,7 +321,27 @@ export async function generateForClient(clientId, opts = {}) {
     }
   }
 
-  const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData);
+  // Pass 1 — raw first thought, no rules. Write like a human would before editing.
+  const contextBlock = contextText
+    ? `Source material to draw from:\n---\n${contextText}\n---\n\n`
+    : '';
+  const roughMsg = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 512,
+    messages: [{
+      role: 'user',
+      content: `${contextBlock}You are ${client.name}. Something just happened or you just noticed something and you want to write about it on LinkedIn.\n\nThe moment / observation: ${topicData.topic}\nWhat makes it interesting: ${topicData.angle}\n\nWrite your raw first thought — like you're typing a note to yourself before you edit it. No polish. No structure. No rules. Just what you'd actually say. Keep it under 100 words.`,
+    }],
+  });
+
+  const roughDraft = roughMsg.content
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('')
+    .trim();
+
+  // Pass 2 — shape the raw draft into a real post. The soul comes from pass 1.
+  const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData, contextText);
   const postMsg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
@@ -229,7 +349,7 @@ export async function generateForClient(clientId, opts = {}) {
       role: 'user',
       content: [
         { type: 'text', text: staticPart, cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: dynamicPart },
+        { type: 'text', text: `${dynamicPart}\n\nRaw first thought to build from (keep the energy and voice, shape it into the post):\n"${roughDraft}"` },
       ],
     }],
   });
@@ -240,7 +360,7 @@ export async function generateForClient(clientId, opts = {}) {
     .join('\n')
     .trim();
 
-  return { client, topicData, postText, type: 'text' };
+  return { client, topicData, postText, type: 'text', sourceUrl: opts.url || null };
 }
 
 // ─── Save draft ───────────────────────────────────────────────────────────────
@@ -256,6 +376,7 @@ export function saveDraft(clientId, result) {
     generatedAt: new Date().toISOString(),
     topicData: result.topicData,
     postText: result.postText,
+    sourceUrl: result.sourceUrl || null,
     posted: false,
     postedAt: null,
     linkedInPostId: null,
