@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-09T08-48-59-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-07-09T08:48:59.437Z",
+  "topicData": {
+    "pillarId": "policy-and-power",
+    "topic": "Mumbai’s problem is not lack of money; it is broken governance. The BMC has one of the largest civic budgets in India, yet citizens still face potholes, flooding, unsafe infrastructure, poor planning, and delayed public works. The issue is that too many agencies control different parts of the city, while no single accountable authority has the power, time, and responsibility to fix outcomes. Money exists, but the system leaks through weak accountability, fragmented ownership, poor tendering, missing contracts, and lack of independent audits.",
+    "angle": "Write from the specific details and your honest reaction to this topic.",
+    "format": "text"
+  },
+  "postText": "Mumbai's BMC budget is larger than several state governments. And people are still wading through chest-deep water every monsoon.\n\nThis is not a money problem.\n\nTraffic is one agency. Drainage is another. Railways, MMRDA, SRA, PWD. Each owns a piece. Nobody owns the outcome. Perfect setup for passing blame, terrible setup for fixing anything.\n\nThe money exists. Then it hits the tendering process, the missing contracts, the audit that never came, the six agencies arguing over whose road that pothole is on. And somewhere in that chain, the accountability just dissolves.\n\nThat's not poverty. That's a system that was never really designed to deliver.\n\nI built FloodReady Delhi because I wanted to understand why flood data was so fragmented. Turns out the data wasn't the only thing fragmented. The ownership was too.\n\nI still don't know what the fix looks like at that scale. One authority? Stronger audits? Independent oversight with real teeth? Maybe all of it. Maybe none of it is enough without political will behind it.\n\nWhat does it look like from where you are in the city?\n\n#PublicPolicy #UrbanPolicy #CivicTech",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
