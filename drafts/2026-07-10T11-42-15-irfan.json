@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-10T11-42-15-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-07-10T11:42:15.361Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "Why large enterprises are burning through annual AI budgets in 4 months and what that actually means for telecoms and logistics leaders",
+    "angle": "One large enterprise burned through its full-year AI budget in four months. That's not a speed problem. That's a control problem — and it looks completely different depending on whether you run a telecoms operator or a logistics firm.",
+    "format": "text"
+  },
+  "postText": "One large enterprise burned through its full-year AI budget in four months. Everyone is calling that a spend problem. It isn't.\n\nIt's a control problem. And the shape of that problem depends entirely on what kind of organisation you are.\n\nIn a telecoms operator with 28,000 employees, the exposure tends to show up in agents. Customer data, billing queries, network diagnostics. The harness around those agents, the permissions, the guardrails, the observability, gets built after the fact. By then the tokens are gone and the CFO is asking questions nobody prepared for.\n\nIn a logistics firm it looks different. Tokens get burned on route optimisation tools that went into production before anyone agreed how to measure the return. Not a governance failure exactly. More like nobody made it a results question first.\n\nSame budget explosion. Completely different reasons. Completely different fixes.\n\nThe binding constraint was never the model. It was the foundations nobody built before the spend started.\n\nIf you're in the room when the AI budget review lands this quarter, what's the question you're getting asked?\n\n#EnterpriseAI #TechLeadership #DigitalTransformation",
+  "sourceUrl": "https://share.google/IQ5xIuQpd220Zi2Tf",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
