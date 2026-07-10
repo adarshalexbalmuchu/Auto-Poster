@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-10T11-48-26-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-07-10T11:48:26.818Z",
+  "topicData": {
+    "pillarId": "sharp-takes",
+    "topic": "The myth of 'AI transformation' in large enterprises — what actually happens when you measure success the way your organisation measures everything else",
+    "angle": "Every enterprise AI programme I've watched succeed had one thing in common: it stopped using the word 'transformation' after month three.",
+    "format": "text"
+  },
+  "postText": "Every AI programme that actually worked quietly dropped the word \"transformation\" around month three.\n\nNobody announced it. It just stopped appearing in the decks.\n\nThe ones that failed? \"Transformation\" was in every slide until the end.\n\nI've watched this happen in a telecoms operator with 28,000 employees and in a facilities management firm with field teams spread across 400 sites. Different industries, completely different AI use cases. Same pattern.\n\nThe word is doing something dangerous. It gives everyone permission to avoid measuring anything properly. Because transformation is supposed to be felt, not counted. And if you can't count it, you can never fail.\n\nThe programmes that survived stopped asking \"are we transforming?\" and started asking the same questions the finance director asks every quarter. Cost per transaction. Time to resolve. Headcount against output. Boring measures. Real ones.\n\nI'm still working out whether the word causes the failure or just signals it early. Probably both.\n\nWhat's the language your organisation actually uses when an AI programme starts getting serious?\n\n#AILeadership #EnterpriseStrategy #TechLeadership",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
