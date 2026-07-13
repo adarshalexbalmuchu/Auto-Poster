@@ -40,5 +40,12 @@
     "topic": "Mumbai’s problem is not lack of money; it is broken governance. The BMC has one of the largest civic budgets in India, yet citizens still face potholes, flooding, unsafe infrastructure, poor planning, and delayed public works. The issue is that too many agencies control different parts of the city, while no single accountable authority has the power, time, and responsibility to fix outcomes. Money exists, but the system leaks through weak accountability, fragmented ownership, poor tendering, missing contracts, and lack of independent audits.",
     "hook": "Mumbai's BMC budget is larger than several state governments. And people are still wading through chest-deep water every monsoon.",
     "date": "2026-07-09"
+  },
+  {
+    "client": "irfan",
+    "pillar": "sharp-takes",
+    "topic": "meta launching its own new chip , IRIS , and their strategy . how it will affect the AI infra market",
+    "hook": "Meta just announced Iris, their custom AI chip. And the narrative is already wrong.",
+    "date": "2026-07-13"
   }
 ]
