@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-16T09-07-10-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-07-16T09:07:10.771Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "Why telecoms operators are winning at AI adoption while logistics firms are still stuck in pilots — and it has nothing to do with technology",
+    "angle": "The operators who actually deploy AI at scale aren't the ones with the best AI strategy. They're the ones who already had a culture of treating infrastructure changes as non-negotiable.",
+    "format": "text"
+  },
+  "postText": "Telecoms operators aren't winning at AI because they have better tools. They're winning because they've been forcing infrastructure changes on their own organisations for decades. It's muscle memory.\n\nA network upgrade doesn't get debated for 18 months. It ships. That culture transfers directly to AI deployment.\n\nLogistics firms have genuinely better use cases. Route optimisation, demand sensing, yard management — the ROI case writes itself. But I keep sitting in rooms where the same programme is still \"in evaluation\" a year and a half after it started. And the data quality excuse has run out of road.\n\nThe difference isn't technical. It's whether the organisation has ever treated a major operational change as non-negotiable.\n\nTelecoms learned that in the 3G rollout era. Logistics never had to learn it at all. So AI lands as a choice. And choices get deferred.\n\nI haven't fully worked out how you build that muscle retrospectively. But I'm fairly sure you can't do it with another steering committee.\n\nIf you're in logistics operations, what's actually keeping your AI programmes in pilot?\n\n#EnterpriseAI\n#TechLeadership\n#DigitalTransformation",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
