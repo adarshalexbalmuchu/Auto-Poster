@@ -12,7 +12,7 @@
 import 'dotenv/config';
 import { readdirSync, readFileSync } from 'node:fs';
 import { sendWhatsApp } from './whatsapp.js';
-import { getEngagementSummary, getSocialActions } from './analytics.js';
+import { getSocialActions } from './analytics.js';
 import { envKey } from './linkedin.js';
 
 const DRAFTS_DIR = './drafts';

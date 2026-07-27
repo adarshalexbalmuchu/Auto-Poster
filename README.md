@@ -29,13 +29,12 @@ WhatsApp "new post"
 
 | Layer | Tool |
 |-------|------|
-| AI generation | Anthropic Claude (`claude-sonnet-4-6`) |
+| AI generation | Anthropic Claude (`claude-sonnet-4-6` writing, `claude-haiku-4-5` topic picking) |
 | Control interface | Meta WhatsApp Cloud API |
 | Webhook handler | Cloudflare Worker + Cloudflare KV (state) |
 | Pipeline runner | GitHub Actions |
-| Publishing | LinkedIn UGC Posts API / REST Posts API |
-| PDF generation | `pdf-lib` (carousel posts) |
-| Scheduling | GitHub Actions cron |
+| Publishing | LinkedIn UGC Posts API |
+| Scheduling | GitHub Actions cron (token check, 24h stats) |
 
 ---
 
@@ -43,10 +42,12 @@ WhatsApp "new post"
 
 | Client | Posting days | Time | Pillars |
 |--------|-------------|------|---------|
-| Irfan Sheikh | Tue–Thu | 08:30 UK | AI at Work, Adoption Gap, Human Side of AI, Sharp Takes |
-| Alex (Adarsh) | Mon–Fri | 09:00 IST | AI Watch (2×/wk), Policy & Power, Building in Public, The Notebook, Sharp Takes |
+| Irfan Sheikh | Tue–Thu | 08:30 UK | The Delivery Lens, Where It Breaks, Sharp Takes |
+| Alex (Adarsh) | Mon–Fri | 09:00 IST | AI Watch, Policy & Power, Building in Public, The Notebook, Sharp Takes |
 
-Pillars are weighted by `frequency` and `last_posted` — Claude automatically rotates to the most overdue pillar. `sharp-takes` is excluded from automatic selection (manual only).
+Pillars are weighted by `frequency` and `last_posted` — the most overdue pillar is selected automatically. Pillars with `frequency: 0` are excluded from automatic selection (manual only).
+
+Adding a client is config-only: drop a `clients/<id>.json` file (same shape as the existing ones) — no code changes needed. To surface it in the WhatsApp bot, also add it to `CLIENTS` in `worker/index.js`.
 
 ---
 
@@ -60,9 +61,14 @@ src/
   run.js          — CLI entrypoint (generate + optional post + Worker callback)
   linkedin.js     — LinkedIn API client
   whatsapp.js     — WhatsApp notification sender (preview + buttons)
-  auth.js         — LinkedIn OAuth flow (run once per client)
-  carousel.js     — PDF carousel builder (pdf-lib, 1080×1080 slides)
+  auth.js         — LinkedIn OAuth flow (run once per client, ~60 days)
+  analytics.js    — Engagement metrics for published posts (CLI + feedback loop)
+  notify-stats.js — WhatsApp 24h engagement summary for recent posts
   check-tokens.js — LinkedIn token expiry checker (sends WhatsApp warning)
+  cli-utils.js    — Shared CLI argument parsing
+
+scripts/
+  pre-deploy.js   — Worker pre-deployment validation
 
 worker/
   index.js        — Cloudflare Worker: WhatsApp bot + /callback endpoint
@@ -76,10 +82,11 @@ drafts/           — Generated posts (JSON), committed to git
   history.json    — Published post log (topic deduplication)
 
 .github/workflows/
-  generate.yml    — Generate a post (scheduled + manual)
-  post.yml        — Post latest draft to LinkedIn (manual)
-  edit.yml        — Apply edit instruction to latest draft (manual)
-  token-check.yml — Check LinkedIn token expiry (every Monday 08:00 UTC)
+  generate.yml         — Generate a post (dispatched by Worker / manual)
+  post.yml             — Post latest draft to LinkedIn (dispatched by Worker / manual)
+  edit.yml             — Apply edit instruction to latest draft (dispatched by Worker / manual)
+  token-check.yml      — Check LinkedIn token expiry (every Monday 08:00 UTC)
+  analytics-notify.yml — WhatsApp 24h stats for posts published yesterday (daily 08:30 UTC)
 ```
 
 ---
@@ -140,23 +147,31 @@ WORKER_CALLBACK_SECRET   — same value as GitHub Actions secret
 | `skip` | Discard latest draft |
 | `regenerate` | Rewrite with same topic |
 | `edit: [instruction]` | Refine current draft — e.g. `edit: sharpen the hook` |
+| _(send a photo)_ | Attach an image to the current draft — it's posted alongside the text |
 | `status` | Check bot is running |
 | `help` | Show all commands |
 
 The edit command is stateful — you can edit multiple times before posting. Each edit targets the same draft file.
 
+### Attaching an image
+
+Once you have a draft (preview received), just **send a photo in the chat**. The Worker downloads it, stores it in KV, and attaches it to the current draft. Tap **Post it** and it publishes as a LinkedIn image share (text + image).
+
+- Supported types: JPEG, PNG, GIF (LinkedIn feed-share formats).
+- The image is bridged to the posting step (which runs in GitHub Actions) via an authenticated `/media/<key>` Worker endpoint — workflow inputs can't carry binary, so the Action fetches the bytes back at post time using `WORKER_CALLBACK_SECRET`.
+- Starting a fresh `new post` detaches any previously attached image.
+- No LinkedIn re-auth is needed — image shares use the same `w_member_social` scope as text.
+
 ---
 
-## Carousel posts
-
-Generate a 5-slide PDF carousel (uploaded to WhatsApp + LinkedIn):
+## Analytics
 
 ```bash
-npm run generate -- --client alex --format carousel
-npm run run -- --client alex --format carousel
+npm run analytics -- --client irfan            # reactions/comments/shares for published posts
+npm run analytics -- --client irfan --count 5
 ```
 
-Or select carousel format via the WhatsApp bot seed step.
+Engagement data also feeds back into generation automatically — recent high/low performers are shown to Claude during topic selection. A daily cron (`analytics-notify.yml`) sends a WhatsApp summary for posts published ~24h ago.
 
 ---
 
@@ -239,7 +254,8 @@ Then redeploy and check `/health`.
 npm run run -- --client alex
 npm run run -- --client alex --pillar ai-watch
 npm run run -- --client alex --seed "FloodReady Delhi launch"
-npm run run -- --client alex --format carousel
+npm run run -- --client alex --format story
+npm run run -- --client alex --url "https://example.com/article"   # Claude reads it as source material
 npm run run -- --client alex --post        # generate + post immediately
 npm run run -- --client alex --dry-run     # preview without posting
 

@@ -52,7 +52,7 @@ async function sendButtons(phoneNumberId, token, to, body, buttons) {
   });
 }
 
-export async function sendDraftNotification(result, draftFilename) {
+export async function sendDraftNotification(result) {
   const { token, phoneNumberId, to } = getEnv();
   if (!token || !phoneNumberId || !to) {
     console.warn('[whatsapp] Credentials missing — draft notification skipped');

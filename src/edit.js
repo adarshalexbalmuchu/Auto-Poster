@@ -93,10 +93,7 @@ async function applyEdit(draft, client, instruction) {
 
 async function notifyAfterEdit(client, draft, revisedText, resolvedPath, phone) {
   try {
-    await sendDraftNotification(
-      { client, topicData: draft.topicData, postText: revisedText },
-      resolvedPath
-    );
+    await sendDraftNotification({ client, topicData: draft.topicData, postText: revisedText });
     console.log('\n✓ WhatsApp notification sent');
   } catch (e) {
     console.warn(`WhatsApp notification skipped: ${e.message}`);

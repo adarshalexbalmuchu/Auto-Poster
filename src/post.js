@@ -9,8 +9,32 @@
 
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
-import { postText } from './linkedin.js';
+import { postText, postImage } from './linkedin.js';
 import { loadClient, updatePillarLastPosted, HISTORY_PATH } from './generate.js';
+
+// An image attached via WhatsApp is stashed in the Worker's KV. The Worker
+// passes its key through the workflow dispatch (INPUT_IMAGE_KEY); we fetch the
+// bytes back here from the authenticated /media endpoint at post time.
+async function fetchAttachedImage() {
+  const key        = process.env.INPUT_IMAGE_KEY;
+  const workerUrl  = process.env.WORKER_URL;
+  const secret     = process.env.WORKER_CALLBACK_SECRET;
+  if (!key || !workerUrl || !secret) return null;
+
+  const res = await fetch(`${workerUrl}/media/${encodeURIComponent(key)}`, {
+    headers: { Authorization: `Bearer ${secret}`, 'User-Agent': 'auto-poster/1.0' },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (res.status === 404) {
+    console.warn('Attached image not found in Worker KV (expired?) — posting text only.');
+    return null;
+  }
+  if (!res.ok) throw new Error(`Could not fetch attached image from Worker (${res.status})`);
+
+  const mime = res.headers.get('content-type') || 'image/jpeg';
+  const data = Buffer.from(await res.arrayBuffer());
+  return { data, mime };
+}
 
 function appendHistory(draft) {
   const records = existsSync(HISTORY_PATH)
@@ -40,15 +64,20 @@ export async function postDraft(draftPath, opts = {}) {
 
   const client = loadClient(draft.clientId);
 
+  const image = opts.image !== undefined ? opts.image : await fetchAttachedImage();
+
   if (opts.dryRun) {
     console.log('\n[DRY RUN] Would post to LinkedIn:');
     console.log('─'.repeat(50));
     console.log(draft.postText);
     console.log('─'.repeat(50));
+    if (image) console.log(`[with attached image: ${image.mime}, ${image.data.length} bytes]`);
     return { dryRun: true };
   }
 
-  const result = await postText(client, draft.postText);
+  const result = image
+    ? await postImage(client, draft.postText, image.data, image.mime)
+    : await postText(client, draft.postText);
 
   markPosted(draftPath, draft, result.postId);
   appendHistory(draft);

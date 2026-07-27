@@ -4,23 +4,23 @@
   "private": true,
   "type": "module",
   "description": "AI-powered LinkedIn automation — Claude generates posts, schedules and publishes them.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "auth": "node src/auth.js",
     "generate": "node src/generate.js",
     "post": "node src/post.js",
     "run": "node src/run.js",
     "edit": "node src/edit.js",
-    "schedule": "node src/scheduler.js",
     "analytics": "node src/analytics.js",
     "notify-stats": "node src/notify-stats.js",
+    "check-tokens": "node src/check-tokens.js",
     "pre-deploy": "node scripts/pre-deploy.js",
     "deploy-worker": "node scripts/pre-deploy.js && cd worker && npx wrangler deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.1",
-    "node-cron": "^3.0.3",
-    "open": "^10.1.0"
+    "dotenv": "^16.4.5"
   }
 }

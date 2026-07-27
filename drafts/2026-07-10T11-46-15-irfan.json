@@ -1,0 +1,16 @@
+{
+  "id": "2026-07-10T11-46-15-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-07-10T11:46:15.474Z",
+  "topicData": {
+    "pillarId": "sharp-takes",
+    "topic": "The silent failure of enterprise AI pilots: when success metrics are designed by people who have never had to explain a failed programme to the board",
+    "angle": "I've watched enterprise AI pilots hit their targets and still get killed. Not because they didn't work. Because they were measured by the wrong people.",
+    "format": "text"
+  },
+  "postText": "Most enterprise AI pilots don't fail because the technology didn't work.\n\nThey fail because the people who designed the success metrics had never been in the room when something goes wrong at board level.\n\nI watched one get cut last week. Hit every KPI. 100% of them. Still got killed.\n\nThe data science team built metrics they could defend to each other. Technically clean. Completely disconnected from what the CFO needed to see to protect the budget in Q3, or what the COO would have to explain if it broke at scale.\n\nWhen you've never had to sit in front of a board and account for a failed programme, you optimise for being right. Not for surviving scrutiny. Those are not the same thing.\n\nIn a facilities management firm this looks different than in a telecoms operator. But the pattern is identical. The people closest to the build are the last people who should own the success criteria.\n\nStill not sure there's a clean fix for this. Governance helps. But governance doesn't change who's actually in the room when the metrics get set.\n\nWhere are you seeing this play out in your organisation?\n\n#AILeadership #EnterpriseStrategy #TechLeadership",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}

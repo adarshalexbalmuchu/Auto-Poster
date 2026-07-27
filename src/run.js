@@ -12,7 +12,7 @@
 import 'dotenv/config';
 import { generateForClient, saveDraft, recordTopic } from './generate.js';
 import { postDraft } from './post.js';
-import { sendDraftNotification } from './whatsapp.js';
+import { sendDraftNotification, sendWhatsApp } from './whatsapp.js';
 import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
 
 function parseRunArgs() {
@@ -49,7 +49,7 @@ async function generateAndSave({ clientId, pillarId, seed, format, url }) {
 
 async function notifyAndCallback(result, filename, clientId) {
   try {
-    await sendDraftNotification(result, filename);
+    await sendDraftNotification(result);
     console.log('✓ WhatsApp notification sent');
   } catch (e) {
     console.log(`  WhatsApp error: ${e.message}`);
@@ -142,7 +142,14 @@ Options:
   await postIfRequested(filename, opts);
 }
 
-main().catch(e => {
+main().catch(async e => {
   console.error('\nFailed:', e.message);
+  // Don't fail silently — the WhatsApp user is left staring at "Reading source
+  // URL..." otherwise. Best-effort notify; never let this mask the real error.
+  try {
+    await sendWhatsApp(`⚠️ Post generation failed.\n\n${e.message}`);
+  } catch (notifyErr) {
+    console.error('  (could not send failure notification:', notifyErr.message + ')');
+  }
   process.exit(1);
 });
