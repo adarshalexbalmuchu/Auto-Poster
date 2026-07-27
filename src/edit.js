@@ -11,31 +11,11 @@
 
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { loadClient, MODEL, HARD_RULES } from './generate.js';
-import { sendDraftNotification } from './whatsapp.js';
+import { sendDraftNotification, sendWhatsApp } from './whatsapp.js';
 import { requireApiKey } from './cli-utils.js';
-
-function findLatestDraft(clientId) {
-  let files;
-  try {
-    files = readdirSync('./drafts');
-  } catch {
-    throw new Error('drafts/ directory not found — no draft to edit');
-  }
-  const candidates = files
-    .filter(f => f.endsWith(`-${clientId}.json`) && f !== 'history.json')
-    .sort()
-    .reverse();
-  for (const file of candidates) {
-    const path = `./drafts/${file}`;
-    try {
-      const d = JSON.parse(readFileSync(path, 'utf8'));
-      if (!d.posted) return path;
-    } catch { /* skip corrupt files */ }
-  }
-  throw new Error(`No unposted draft found for: ${clientId}`);
-}
+import { findLatestDraft } from './drafts.js';
 
 function parseEditArgs() {
   const args = process.argv.slice(2);
@@ -156,4 +136,12 @@ async function main() {
   await notifyAfterEdit(client, draft, revisedText, resolvedPath, phone);
 }
 
-main().catch(e => { console.error(e.message); process.exit(1); });
+main().catch(async e => {
+  console.error(e.message);
+  try {
+    await sendWhatsApp(`⚠️ Edit failed.\n\n${e.message}`);
+  } catch (notifyErr) {
+    console.error('  (could not send failure notification:', notifyErr.message + ')');
+  }
+  process.exit(1);
+});
