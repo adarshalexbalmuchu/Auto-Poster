@@ -147,10 +147,20 @@ WORKER_CALLBACK_SECRET   — same value as GitHub Actions secret
 | `skip` | Discard latest draft |
 | `regenerate` | Rewrite with same topic |
 | `edit: [instruction]` | Refine current draft — e.g. `edit: sharpen the hook` |
+| _(send a photo)_ | Attach an image to the current draft — it's posted alongside the text |
 | `status` | Check bot is running |
 | `help` | Show all commands |
 
 The edit command is stateful — you can edit multiple times before posting. Each edit targets the same draft file.
+
+### Attaching an image
+
+Once you have a draft (preview received), just **send a photo in the chat**. The Worker downloads it, stores it in KV, and attaches it to the current draft. Tap **Post it** and it publishes as a LinkedIn image share (text + image).
+
+- Supported types: JPEG, PNG, GIF (LinkedIn feed-share formats).
+- The image is bridged to the posting step (which runs in GitHub Actions) via an authenticated `/media/<key>` Worker endpoint — workflow inputs can't carry binary, so the Action fetches the bytes back at post time using `WORKER_CALLBACK_SECRET`.
+- Starting a fresh `new post` detaches any previously attached image.
+- No LinkedIn re-auth is needed — image shares use the same `w_member_social` scope as text.
 
 ---
 

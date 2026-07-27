@@ -94,11 +94,26 @@ export async function fetchUrlContext(url) {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:') throw new Error('Only HTTPS URLs are supported for context fetching');
 
+  // Present as a normal browser. A custom bot User-Agent gets a 403 from most
+  // sites (news pages, anything behind Cloudflare), which is why URL grounding
+  // used to fail for virtually every link.
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'auto-poster/1.0 (content research)' },
+    redirect: 'follow',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
     signal: AbortSignal.timeout(20_000),
   });
-  if (!res.ok) throw new Error(`Failed to fetch source URL (${res.status}): ${url}`);
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch source URL (${res.status} ${res.statusText}): ${url}` +
+      (res.status === 403 || res.status === 401
+        ? ' — the site blocked automated access. Try a different source, or paste the article text as a topic seed instead.'
+        : '')
+    );
+  }
 
   const html = await res.text();
   const text = html

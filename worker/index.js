@@ -15,7 +15,8 @@
  *   WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
  *
  * KV namespace binding (wrangler.toml):
- *   STATE — stores conversation state per user (1 hour TTL)
+ *   STATE — conversation state per user (1h TTL) and WhatsApp-uploaded images
+ *           awaiting post (media:<phone>, 24h TTL, served via /media to the Action)
  */
 
 const WA_API = 'https://graph.facebook.com/v20.0';
@@ -125,6 +126,22 @@ export default {
       return Response.json({ status: ok ? 'ok' : 'degraded', checks }, { status: ok ? 200 : 503 });
     }
 
+    // Serve an image stashed from WhatsApp back to the GitHub Action at post time.
+    // Authenticated with the same shared secret as /callback; only exposes media: keys.
+    if (request.method === 'GET' && url.pathname.startsWith('/media/')) {
+      const auth = request.headers.get('Authorization') || '';
+      if (!env.WORKER_CALLBACK_SECRET || !timingSafeEqual(auth, `Bearer ${env.WORKER_CALLBACK_SECRET}`)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const key = decodeURIComponent(url.pathname.slice('/media/'.length));
+      if (!key.startsWith('media:')) return new Response('Not Found', { status: 404 });
+      const { value, metadata } = await env.STATE.getWithMetadata(key, 'arrayBuffer');
+      if (!value) return new Response('Not Found', { status: 404 });
+      return new Response(value, {
+        headers: { 'Content-Type': metadata?.mime || 'application/octet-stream' },
+      });
+    }
+
     // Scope webhook verification strictly to root — prevents other GET paths from leaking challenge.
     if (request.method === 'GET' && url.pathname === '/') {
       const mode      = url.searchParams.get('hub.mode');
@@ -182,6 +199,8 @@ export default {
         } else if (message.type === 'text') {
           const text = message.text.body.trim();
           await handleText(env, from, text);
+        } else if (message.type === 'image') {
+          await handleImage(env, from, message);
         }
       } catch (e) {
         console.error('[worker] Error:', e.message);
@@ -299,6 +318,64 @@ async function handleText(env, from, text) {
   await sendText(env, from, 'Reply *new post* to generate a post, or *help* to see all commands.');
 }
 
+// ── Image message handler ─────────────────────────────────────────────────────
+
+async function handleImage(env, from, message) {
+  const state = await getState(env, from);
+
+  // Only meaningful inside an active session — otherwise there's no draft to attach to.
+  if (!state.client || state.step === 'idle') {
+    await sendText(env, from, 'Start with *new post* first — then drop an image and I\'ll attach it to the draft.');
+    return;
+  }
+
+  const mediaId = message.image?.id;
+  if (!mediaId) {
+    await sendText(env, from, 'Couldn\'t read that image — please send it again.');
+    return;
+  }
+
+  await sendText(env, from, '📎 Saving your image...');
+  const { bytes, mime } = await downloadWhatsAppMedia(env, mediaId);
+
+  // LinkedIn feedshare accepts JPEG/PNG/GIF. Reject anything else early with a clear message.
+  if (!/^image\/(jpeg|jpg|png|gif)$/i.test(mime)) {
+    await sendText(env, from, `That image type (${mime}) isn't supported by LinkedIn. Send a JPEG, PNG, or GIF.`);
+    return;
+  }
+
+  const mediaKey = `media:${from}`;
+  // Keep 24h so a slow "Post it" still resolves; a new post detaches by resetting state.
+  await env.STATE.put(mediaKey, bytes, { expirationTtl: 86400, metadata: { mime } });
+  await setState(env, from, { ...state, imageKey: mediaKey, imageMime: mime });
+
+  await sendText(env, from,
+    state.step === 'pending_review'
+      ? '✅ Image attached. Tap *Post it* to publish the draft with this image.'
+      : '✅ Image saved — I\'ll attach it when your draft is ready.'
+  );
+}
+
+// Two-step WhatsApp media fetch: resolve the media ID to a URL, then download
+// the bytes (both calls need the WA bearer token).
+async function downloadWhatsAppMedia(env, mediaId) {
+  const metaRes = await fetch(`${WA_API}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!metaRes.ok) throw new Error(`WhatsApp media lookup failed (${metaRes.status})`);
+  const meta = await metaRes.json();
+  if (!meta?.url) throw new Error('WhatsApp media lookup returned no URL');
+
+  const binRes = await fetch(meta.url, {
+    headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}` },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!binRes.ok) throw new Error(`WhatsApp media download failed (${binRes.status})`);
+
+  return { bytes: await binRes.arrayBuffer(), mime: meta.mime_type || 'image/jpeg' };
+}
+
 // ── Button/list reply handler ───────────────────────────────────────────────
 
 async function handleButtonReply(env, from, id) {
@@ -331,9 +408,12 @@ async function handleButtonReply(env, from, id) {
 
 async function doPost(env, from, state) {
   // Send confirmation first so the user gets feedback immediately.
-  await sendText(env, from, '✅ Posting to LinkedIn now...\n\nCheck your profile in ~30 seconds.');
+  const withImage = state.imageKey ? ' (with your image)' : '';
+  await sendText(env, from, `✅ Posting to LinkedIn now${withImage}...\n\nCheck your profile in ~30 seconds.`);
   try {
-    await triggerPost(env, state.client || null, state.draftPath || null);
+    await triggerPost(env, state.client || null, state.draftPath || null, state.imageKey || null);
+    // Don't delete the KV image here — the Action fetches it moments later. TTL
+    // (and the next post resetting state) handles cleanup without a race.
     await clearState(env, from);
   } catch (e) {
     // Dispatch failed — keep state so the user can retry.
@@ -392,6 +472,7 @@ async function sendHelp(env, from) {
     `• *[your instruction]* — refine the draft once preview arrives\n` +
     `  e.g. _make it shorter_\n` +
     `  e.g. _sharpen the opening hook_\n` +
+    `• *send an image* — once you have a draft, drop a photo (JPEG/PNG/GIF) and it'll be attached to the post\n` +
     `• *status* — check bot status\n` +
     `• *reset* — clear stuck session and start over\n` +
     `• *help* — show this menu`
@@ -449,10 +530,11 @@ async function triggerGenerate(env, client, pillar, format, seed, phone, url) {
   await ghDispatch(env, 'generate.yml', inputs);
 }
 
-async function triggerPost(env, client, draftPath) {
+async function triggerPost(env, client, draftPath, imageKey) {
   const inputs = {};
   if (client)    inputs.client     = client;
   if (draftPath) inputs.draft_path = draftPath;
+  if (imageKey)  inputs.image_key  = imageKey;
   await ghDispatch(env, 'post.yml', inputs);
 }
 
