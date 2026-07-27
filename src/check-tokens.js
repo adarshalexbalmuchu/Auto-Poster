@@ -27,7 +27,7 @@ async function main() {
       warnings.push(
         `⚠️ *${client.name}* LinkedIn token expires in *${daysLeft} day${daysLeft === 1 ? '' : 's'}* (${expiresAt.slice(0, 10)}).\n` +
         `Run: \`npm run auth -- --client ${client.id}\`\n` +
-        `Then update *${client.envKey.replace('_EXPIRES_AT', '_ACCESS_TOKEN')}* in GitHub Secrets.`
+        `Then update *${client.envKey.replace('_TOKEN_EXPIRES_AT', '_ACCESS_TOKEN')}* in GitHub Secrets.`
       );
     }
   }
