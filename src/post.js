@@ -5,12 +5,16 @@
  * Usage:
  *   npm run post -- --draft ./drafts/2026-01-15T09-00-00-alex.json
  *   npm run post -- --draft ./drafts/2026-01-15T09-00-00-alex.json --dry-run
+ *   npm run post -- --client alex          (auto-finds the latest unposted draft for that client)
+ *   npm run post                           (auto-finds the latest unposted draft for any client)
  */
 
 import 'dotenv/config';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { postText, postImage } from './linkedin.js';
 import { loadClient, updatePillarLastPosted, HISTORY_PATH } from './generate.js';
+import { sendWhatsApp } from './whatsapp.js';
+import { findLatestDraft } from './drafts.js';
 
 // An image attached via WhatsApp is stashed in the Worker's KV. The Worker
 // passes its key through the workflow dispatch (INPUT_IMAGE_KEY); we fetch the
@@ -101,17 +105,24 @@ function markPosted(draftPath, draft, postId) {
 
 async function main() {
   const args = process.argv.slice(2);
-  let draftPath = null;
-  let dryRun = false;
+  let draftPath = process.env.INPUT_DRAFT_PATH || null;
+  let clientId  = process.env.INPUT_CLIENT || null;
+  let dryRun    = false;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--draft' && args[i + 1]) draftPath = args[++i];
+    if (args[i] === '--draft'  && args[i + 1]) draftPath = args[++i];
+    if (args[i] === '--client' && args[i + 1]) clientId  = args[++i];
     if (args[i] === '--dry-run') dryRun = true;
   }
 
   if (!draftPath) {
-    console.error('Usage: npm run post -- --draft ./drafts/<file>.json [--dry-run]');
-    process.exit(1);
+    try {
+      draftPath = findLatestDraft(clientId);
+    } catch (e) {
+      console.error(e.message);
+      console.error('Usage: npm run post -- --draft ./drafts/<file>.json [--dry-run]');
+      process.exit(1);
+    }
   }
 
   let draft;
@@ -135,6 +146,11 @@ async function main() {
     }
   } catch (e) {
     console.error(`\nFailed: ${e.message}`);
+    try {
+      await sendWhatsApp(`⚠️ Posting to LinkedIn failed (${draft.clientId}).\n\n${e.message}`);
+    } catch (notifyErr) {
+      console.error('  (could not send failure notification:', notifyErr.message + ')');
+    }
     process.exit(1);
   }
 }

@@ -56,8 +56,9 @@ Adding a client is config-only: drop a `clients/<id>.json` file (same shape as t
 ```
 src/
   generate.js     — Claude topic selection + post writing + pillar rotation
-  post.js         — LinkedIn publishing
+  post.js         — LinkedIn publishing (auto-finds the latest unposted draft if none given)
   edit.js         — Apply a targeted edit instruction to an existing draft
+  drafts.js       — Shared "find latest unposted draft" helper (used by post.js / edit.js)
   run.js          — CLI entrypoint (generate + optional post + Worker callback)
   linkedin.js     — LinkedIn API client
   whatsapp.js     — WhatsApp notification sender (preview + buttons)
@@ -87,6 +88,7 @@ drafts/           — Generated posts (JSON), committed to git
   edit.yml             — Apply edit instruction to latest draft (dispatched by Worker / manual)
   token-check.yml      — Check LinkedIn token expiry (every Monday 08:00 UTC)
   analytics-notify.yml — WhatsApp 24h stats for posts published yesterday (daily 08:30 UTC)
+  ci.yml               — Syntax/JSON/worker-config sanity checks on every PR and push to main
 ```
 
 ---
@@ -261,4 +263,7 @@ npm run run -- --client alex --dry-run     # preview without posting
 
 npm run edit -- --client alex --instruction "make it shorter"
 npm run edit -- --client alex --instruction "sharpen the hook" --draft ./drafts/2026-06-09T09-00-00-alex.json
+
+npm run post -- --client alex              # auto-finds & posts the latest unposted draft for alex
+npm run post -- --draft ./drafts/2026-06-09T09-00-00-alex.json --dry-run
 ```

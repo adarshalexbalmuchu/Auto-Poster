@@ -22,6 +22,7 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
 
@@ -37,28 +38,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Find draft
-        id: draft
-        env:
-          INPUT_CLIENT:     ${{ inputs.client }}
-          INPUT_DRAFT_PATH: ${{ inputs.draft_path }}
-        run: |
-          set -e
-          if [ -n "${INPUT_DRAFT_PATH}" ]; then
-            echo "path=${INPUT_DRAFT_PATH}" >> $GITHUB_OUTPUT
-          else
-            PATTERN="drafts/*.json"
-            [ -n "${INPUT_CLIENT}" ] && PATTERN="drafts/*-${INPUT_CLIENT}.json"
-            LATEST=$(ls -t ${PATTERN} 2>/dev/null | while IFS= read -r f; do
-              node -e "const d=JSON.parse(require('fs').readFileSync(process.argv[1])); if(!d.posted){console.log(process.argv[1]);process.exit(0);}" "$f"
-            done | head -1)
-            if [ -z "$LATEST" ]; then
-              echo "No pending drafts found."
-              exit 1
-            fi
-            echo "path=$LATEST" >> $GITHUB_OUTPUT
-          fi
-
       - name: Post to LinkedIn
         env:
           IRFAN_LINKEDIN_ACCESS_TOKEN:     ${{ secrets.IRFAN_LINKEDIN_ACCESS_TOKEN }}
@@ -67,11 +46,15 @@ jobs:
           ALEX_LINKEDIN_ACCESS_TOKEN:      ${{ secrets.ALEX_LINKEDIN_ACCESS_TOKEN }}
           ALEX_LINKEDIN_PERSON_URN:        ${{ secrets.ALEX_LINKEDIN_PERSON_URN }}
           ALEX_LINKEDIN_TOKEN_EXPIRES_AT:  ${{ secrets.ALEX_LINKEDIN_TOKEN_EXPIRES_AT }}
+          WHATSAPP_ACCESS_TOKEN:           ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:        ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER:       ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
           WORKER_URL:                      ${{ secrets.WORKER_URL }}
           WORKER_CALLBACK_SECRET:          ${{ secrets.WORKER_CALLBACK_SECRET }}
-          INPUT_DRAFT_PATH:                ${{ steps.draft.outputs.path }}
+          INPUT_CLIENT:                    ${{ inputs.client }}
+          INPUT_DRAFT_PATH:                ${{ inputs.draft_path }}
           INPUT_IMAGE_KEY:                 ${{ inputs.image_key }}
-        run: node src/post.js --draft "${INPUT_DRAFT_PATH}"
+        run: node src/post.js
 
       - name: Commit posted status
         run: |
@@ -81,6 +64,14 @@ jobs:
           git add -f drafts/*.json
           if ! git diff --staged --quiet; then
             git commit -m "posted: $(date -u +%Y-%m-%dT%H:%M:%S)"
-            git pull --rebase --autostash origin main
-            git push
+            n=0
+            until git pull --rebase --autostash origin main && git push; do
+              n=$((n + 1))
+              if [ "$n" -ge 5 ]; then
+                echo "::error::git push failed after $n attempts"
+                exit 1
+              fi
+              echo "Push attempt $n failed — retrying in $((n * 3))s..."
+              sleep $((n * 3))
+            done
           fi
