@@ -328,3 +328,13 @@ The same `--url` flag (or pasting a link on WhatsApp) also accepts YouTube links
 2. **Transcript, best-effort** — also attempts to pull the video's caption track (manual or auto-generated) using the same unofficial mechanism the YouTube player itself uses in the browser. No extra setup, no OAuth. If the video has no captions, or YouTube's page structure has changed, this silently falls back to title+description only — it never blocks generation.
 
 Set up the API key: [Google Cloud Console](https://console.cloud.google.com/) → select/create a project → **APIs & Services → Library** → enable **"YouTube Data API v3"** → **Credentials → Create API key** → add it as `YOUTUBE_API_KEY` in `.env` and as a GitHub Actions secret.
+
+### Combining a source link with your own direction
+
+Optional, not required — on WhatsApp, when asked for a seed, you can paste a link **and** add your own direction in the same message:
+
+```
+https://youtu.be/dQw4w9WgXcQ focus on the training-data angle, keep it skeptical
+```
+
+Claude grounds the post in the source material but writes toward the specific direction you gave, instead of picking its own angle. Paste just a link with nothing else and it behaves exactly as before — this is purely additive, nothing changes if you don't use it. The direction can be as short or as long as you want; it isn't summarized or trimmed.
