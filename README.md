@@ -103,6 +103,7 @@ drafts/           — Generated posts (JSON), committed to git
 
 ```
 ANTHROPIC_API_KEY
+YOUTUBE_API_KEY             — optional; required only to read YouTube links as source material
 
 IRFAN_LINKEDIN_ACCESS_TOKEN
 IRFAN_LINKEDIN_PERSON_URN
@@ -307,7 +308,8 @@ npm run run -- --client alex
 npm run run -- --client alex --pillar ai-watch
 npm run run -- --client alex --seed "FloodReady Delhi launch"
 npm run run -- --client alex --format story
-npm run run -- --client alex --url "https://example.com/article"   # Claude reads it as source material
+npm run run -- --client alex --url "https://example.com/article"          # Claude reads it as source material
+npm run run -- --client alex --url "https://youtu.be/dQw4w9WgXcQ"         # same flag — title/description (+ transcript if available)
 npm run run -- --client alex --post        # generate + post immediately
 npm run run -- --client alex --dry-run     # preview without posting
 
@@ -317,3 +319,12 @@ npm run edit -- --client alex --instruction "sharpen the hook" --draft ./drafts/
 npm run post -- --client alex              # auto-finds & posts the latest unposted draft for alex
 npm run post -- --draft ./drafts/2026-06-09T09-00-00-alex.json --dry-run
 ```
+
+### Reading a YouTube video as source material
+
+The same `--url` flag (or pasting a link on WhatsApp) also accepts YouTube links — `youtube.com/watch?v=...`, `youtu.be/...`, `/shorts/...`, `/embed/...`, and `/live/...` are all recognized. Two layers of grounding, combined:
+
+1. **Title, full description, and channel** via the official YouTube Data API v3 — needs `YOUTUBE_API_KEY` (a plain API key from Google Cloud Console, no OAuth). This is the reliable baseline; without the key, YouTube URLs fail with a clear setup message.
+2. **Transcript, best-effort** — also attempts to pull the video's caption track (manual or auto-generated) using the same unofficial mechanism the YouTube player itself uses in the browser. No extra setup, no OAuth. If the video has no captions, or YouTube's page structure has changed, this silently falls back to title+description only — it never blocks generation.
+
+Set up the API key: [Google Cloud Console](https://console.cloud.google.com/) → select/create a project → **APIs & Services → Library** → enable **"YouTube Data API v3"** → **Credentials → Create API key** → add it as `YOUTUBE_API_KEY` in `.env` and as a GitHub Actions secret.

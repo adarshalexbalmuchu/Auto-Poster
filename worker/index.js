@@ -716,7 +716,7 @@ async function handleButtonReply(env, from, id) {
     const [, clientId, pillarPart] = id.split(':');
     const pillar = pillarPart === 'claude' ? null : pillarPart;
     await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
-    await sendText(env, from, 'Any topic seed or source URL?\n\nReply with a topic hint, paste an *https://...* link (Claude will read it), or say *none*.');
+    await sendText(env, from, 'Any topic seed or source URL?\n\nReply with a topic hint, paste an *https://...* link — an article or a YouTube video (Claude will read it) — or say *none*.');
     return;
   }
 
@@ -852,7 +852,7 @@ async function sendHelp(env, from) {
   await sendText(env, from,
     `*Auto-Poster Commands*\n\n` +
     `• *new post* — guided post generation\n` +
-    `  When asked for a seed, paste an https://... URL and Claude will read it as source material\n` +
+    `  When asked for a seed, paste an https://... URL (article or YouTube video) and Claude will read it as source material\n` +
     `• *post* — publish latest draft to LinkedIn\n` +
     `• *skip* — discard latest draft\n` +
     `• *regenerate* — rewrite with same topic/source\n` +
