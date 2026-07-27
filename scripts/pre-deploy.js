@@ -56,6 +56,15 @@ if (!existsSync(tomlPath)) {
   } else {
     warn('Observability logs not enabled', 'Add [observability.logs] enabled = true for wrangler tail to work');
   }
+
+  if (toml.includes('[triggers]') && /crons\s*=/.test(toml)) {
+    ok('Cron trigger configured (required for scheduled posts)');
+  } else {
+    fail(
+      'Cron trigger configured in wrangler.toml',
+      'Add [triggers]\\ncrons = ["*/15 * * * *"] — without it, "schedule: ..." posts are stored but never fire'
+    );
+  }
 }
 
 // ── 2. Required secrets set in Cloudflare ───────────────────────────────────
@@ -95,7 +104,7 @@ try {
 
 // ── 3. Required GitHub Actions workflow files ────────────────────────────────
 
-const workflows = ['generate.yml', 'post.yml', 'edit.yml', 'token-check.yml'];
+const workflows = ['generate.yml', 'post.yml', 'edit.yml', 'token-check.yml', 'comment-check.yml', 'reply-comment.yml'];
 for (const wf of workflows) {
   const wfPath = join(root, '.github/workflows', wf);
   if (existsSync(wfPath)) {

@@ -1,0 +1,46 @@
+name: Reply to Comment
+
+on:
+  workflow_dispatch:
+    inputs:
+      client:
+        description: 'Client ID (irfan / alex)'
+        required: true
+      post_urn:
+        description: 'LinkedIn post URN the comment is on'
+        required: true
+      reply_text:
+        description: 'Reply text to post'
+        required: true
+
+permissions: {}
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Post reply
+        env:
+          IRFAN_LINKEDIN_ACCESS_TOKEN: ${{ secrets.IRFAN_LINKEDIN_ACCESS_TOKEN }}
+          IRFAN_LINKEDIN_PERSON_URN:   ${{ secrets.IRFAN_LINKEDIN_PERSON_URN }}
+          ALEX_LINKEDIN_ACCESS_TOKEN:  ${{ secrets.ALEX_LINKEDIN_ACCESS_TOKEN }}
+          ALEX_LINKEDIN_PERSON_URN:    ${{ secrets.ALEX_LINKEDIN_PERSON_URN }}
+          WHATSAPP_ACCESS_TOKEN:       ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID:    ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          INPUT_CLIENT:                ${{ inputs.client }}
+          INPUT_POST_URN:              ${{ inputs.post_urn }}
+          INPUT_REPLY_TEXT:            ${{ inputs.reply_text }}
+        run: node src/post-comment-reply.js
