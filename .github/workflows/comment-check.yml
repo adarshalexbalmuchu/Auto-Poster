@@ -1,0 +1,63 @@
+name: Check Comments
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: auto-poster-git
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Check for new comments
+        env:
+          ANTHROPIC_API_KEY:          ${{ secrets.ANTHROPIC_API_KEY }}
+          IRFAN_LINKEDIN_ACCESS_TOKEN: ${{ secrets.IRFAN_LINKEDIN_ACCESS_TOKEN }}
+          IRFAN_LINKEDIN_PERSON_URN:   ${{ secrets.IRFAN_LINKEDIN_PERSON_URN }}
+          ALEX_LINKEDIN_ACCESS_TOKEN:  ${{ secrets.ALEX_LINKEDIN_ACCESS_TOKEN }}
+          ALEX_LINKEDIN_PERSON_URN:    ${{ secrets.ALEX_LINKEDIN_PERSON_URN }}
+          WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          WORKER_URL:                  ${{ secrets.WORKER_URL }}
+          WORKER_CALLBACK_SECRET:      ${{ secrets.WORKER_CALLBACK_SECRET }}
+        run: node src/check-comments.js
+
+      - name: Commit seen-comment tracking
+        run: |
+          set -e
+          git config user.name  "Auto-Poster Bot"
+          git config user.email "bot@auto-poster.local"
+          git add -f drafts/*.json
+          if ! git diff --staged --quiet; then
+            git commit -m "comments: $(date -u +%Y-%m-%dT%H:%M:%S)"
+            n=0
+            until git pull --rebase --autostash origin main && git push; do
+              n=$((n + 1))
+              if [ "$n" -ge 5 ]; then
+                echo "::error::git push failed after $n attempts"
+                exit 1
+              fi
+              echo "Push attempt $n failed — retrying in $((n * 3))s..."
+              sleep $((n * 3))
+            done
+          fi

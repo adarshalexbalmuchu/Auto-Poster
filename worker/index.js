@@ -15,17 +15,21 @@
  *   WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
  *
  * KV namespace binding (wrangler.toml):
- *   STATE — conversation state per user (1h TTL) and WhatsApp-uploaded images
- *           awaiting post (media:<phone>, 24h TTL, served via /media to the Action)
+ *   STATE — conversation state per user (1h TTL); WhatsApp-uploaded images/
+ *           documents awaiting post (media:<phone>:<n>, 7d TTL, served via
+ *           /media to the Action); scheduled posts (scheduled:<ISO-UTC>:<phone>,
+ *           checked every 15 min by the `scheduled` cron handler below); and
+ *           pending comment-reply approvals (commentreply:<phone>:<id>, 7d TTL)
  */
 
 const WA_API = 'https://graph.facebook.com/v20.0';
 const GH_API = 'https://api.github.com';
 
-// Keep in sync with clients/*.json pillar IDs.
+// Keep in sync with clients/*.json pillar IDs and postingSchedule.timezone.
 const CLIENTS = {
   irfan: {
     name: 'Irfan',
+    timezone: 'Europe/London',
     pillars: [
       { id: 'delivery-lens',   title: 'The Delivery Lens' },
       { id: 'where-it-breaks', title: 'Where It Breaks'   },
@@ -34,6 +38,7 @@ const CLIENTS = {
   },
   alex: {
     name: 'Alex',
+    timezone: 'Asia/Kolkata',
     pillars: [
       { id: 'ai-watch',           title: 'AI Watch'          },
       { id: 'policy-and-power',   title: 'Policy & Power'    },
@@ -43,6 +48,99 @@ const CLIENTS = {
     ],
   },
 };
+
+// ── Schedule-time parsing ───────────────────────────────────────────────────
+//
+// Pure Intl-based timezone math, no dependencies (Workers support the full
+// Intl API). Handles "9am tomorrow", "tomorrow 9am", "5pm today", "in 2 hours",
+// "in 30 minutes", bare "9am" (today if still upcoming, else tomorrow), and
+// absolute "YYYY-MM-DD HH:MM" — each interpreted in the given IANA timezone.
+
+function zonedTimeToUtc(y, m, d, hh, mm, timeZone) {
+  const guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(guess).map(p => [p.type, p.value]));
+  const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return new Date(guess.getTime() + (guess.getTime() - asIfUtc));
+}
+
+function getZonedYMD(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const parts = Object.fromEntries(dtf.formatToParts(date).map(p => [p.type, p.value]));
+  return { y: +parts.year, m: +parts.month, d: +parts.day };
+}
+
+function addDaysInZone(y, m, d, days) {
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+
+function parseScheduleTime(rawText, timeZone, now = new Date()) {
+  const text = rawText.trim().toLowerCase();
+
+  let m = text.match(/^in\s+(\d+)\s*(minute|min|hour|hr)s?$/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    const unitMs = /hour|hr/.test(m[2]) ? 3_600_000 : 60_000;
+    return new Date(now.getTime() + n * unitMs);
+  }
+
+  m = text.match(/^(\d{4})-(\d{2})-(\d{2})[t ](\d{1,2}):(\d{2})$/);
+  if (m) {
+    const [, y, mo, d, hh, mm] = m.map(Number);
+    return zonedTimeToUtc(y, mo, d, hh, mm, timeZone);
+  }
+
+  const timeRe = '(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)';
+  let dayWord = null, timeMatch = null;
+
+  m = text.match(new RegExp(`^tomorrow\\s*(?:at\\s*)?${timeRe}$`)) || text.match(new RegExp(`^${timeRe}\\s*tomorrow$`));
+  if (m) { dayWord = 'tomorrow'; timeMatch = m; }
+  if (!m) {
+    m = text.match(new RegExp(`^today\\s*(?:at\\s*)?${timeRe}$`)) || text.match(new RegExp(`^${timeRe}\\s*today$`));
+    if (m) { dayWord = 'today'; timeMatch = m; }
+  }
+  if (!m) {
+    m = text.match(new RegExp(`^${timeRe}$`));
+    if (m) { dayWord = null; timeMatch = m; }
+  }
+
+  if (timeMatch) {
+    let hh = parseInt(timeMatch[1], 10);
+    const mm = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+    const ampm = timeMatch[3];
+    if (hh === 12) hh = 0;
+    if (ampm === 'pm') hh += 12;
+    if (hh > 23 || mm > 59) return null;
+
+    const today = getZonedYMD(now, timeZone);
+    if (dayWord === 'tomorrow') {
+      const t = addDaysInZone(today.y, today.m, today.d, 1);
+      return zonedTimeToUtc(t.y, t.m, t.d, hh, mm, timeZone);
+    }
+    if (dayWord === 'today') {
+      return zonedTimeToUtc(today.y, today.m, today.d, hh, mm, timeZone);
+    }
+    const candidateToday = zonedTimeToUtc(today.y, today.m, today.d, hh, mm, timeZone);
+    if (candidateToday.getTime() > now.getTime()) return candidateToday;
+    const t = addDaysInZone(today.y, today.m, today.d, 1);
+    return zonedTimeToUtc(t.y, t.m, t.d, hh, mm, timeZone);
+  }
+
+  return null;
+}
+
+function formatZoned(date, timeZone) {
+  return date.toLocaleString('en-US', {
+    timeZone, weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+}
 
 // ── Signature verification ──────────────────────────────────────────────────
 
@@ -106,6 +204,14 @@ async function handleCallback(request, env) {
       draftPath: body.draftPath || cur.draftPath || null,
     });
   }
+
+  if (body.type === 'comment_reply_ready' && body.phone && body.client && body.postUrn && body.commentUrn) {
+    if (body.phone !== env.WHATSAPP_OWNER_NUMBER) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    await notifyCommentReply(env, body);
+  }
+
   return new Response('OK', { status: 200 });
 }
 
@@ -201,6 +307,8 @@ export default {
           await handleText(env, from, text);
         } else if (message.type === 'image') {
           await handleImage(env, from, message);
+        } else if (message.type === 'document') {
+          await handleDocument(env, from, message);
         }
       } catch (e) {
         console.error('[worker] Error:', e.message);
@@ -212,7 +320,137 @@ export default {
 
     return new Response('Method Not Allowed', { status: 405 });
   },
+
+  // Cloudflare Cron Trigger (wrangler.toml [triggers]) — fires every 15 min,
+  // posts anything in the `scheduled:` KV namespace whose time has come.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(processDueSchedules(env));
+  },
 };
+
+// ── Scheduled posts ─────────────────────────────────────────────────────────
+//
+// KV keys are `scheduled:<ISO-UTC-timestamp>:<phone>` — the ISO prefix makes
+// env.STATE.list() return them in chronological order for free (same trick
+// used for draft filenames in src/drafts.js).
+
+const MAX_SCHEDULE_ATTEMPTS = 4;
+
+async function scheduleDraft(env, from, state, whenText) {
+  const client = CLIENTS[state.client];
+  const tz = client?.timezone || 'Asia/Kolkata';
+  const when = parseScheduleTime(whenText, tz);
+
+  if (!when) {
+    await sendText(env, from,
+      `Couldn't understand that time. Try one of:\n` +
+      `• *schedule: 9am tomorrow*\n` +
+      `• *schedule: 5pm today*\n` +
+      `• *schedule: in 2 hours*\n` +
+      `• *schedule: 2026-07-28 09:00*`
+    );
+    return;
+  }
+
+  const minLeadMs = 5 * 60_000; // cron checks every 15 min — anything sooner isn't reliable
+  if (when.getTime() < Date.now() + minLeadMs) {
+    await sendText(env, from,
+      'That time is too soon (or already passed) — pick something at least a few minutes out, or reply *post* to publish now.'
+    );
+    return;
+  }
+
+  const isoMinute = when.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+  const key = `scheduled:${when.toISOString()}:${from}`;
+  await env.STATE.put(key, JSON.stringify({
+    client: state.client,
+    draftPath: state.draftPath,
+    imageKeys: state.imageKeys || [],
+    documentKey: state.documentKey || null,
+    phone: from,
+    scheduledForISO: when.toISOString(),
+    attempts: 0,
+  }), { expirationTtl: 30 * 86400 });
+
+  await clearState(env, from);
+
+  await sendText(env, from,
+    `📅 Scheduled for *${formatZoned(when, tz)}* (${tz}).\n\n` +
+    `Reference: *${isoMinute}*\n` +
+    `Reply *schedule list* to see pending posts, or *cancel schedule ${isoMinute}* to cancel this one.`
+  );
+}
+
+async function listSchedules(env, from) {
+  const { keys } = await env.STATE.list({ prefix: 'scheduled:' });
+  if (!keys.length) {
+    await sendText(env, from, 'No posts currently scheduled.');
+    return;
+  }
+  const lines = ['📅 *Scheduled posts:*'];
+  for (const k of keys) {
+    const raw = await env.STATE.get(k.name);
+    if (!raw) continue;
+    const entry = JSON.parse(raw);
+    const tz = CLIENTS[entry.client]?.timezone || 'Asia/Kolkata';
+    const when = new Date(entry.scheduledForISO);
+    const isoMinute = entry.scheduledForISO.slice(0, 16);
+    lines.push(`• *${CLIENTS[entry.client]?.name || entry.client}* — ${formatZoned(when, tz)}  (id: ${isoMinute})`);
+  }
+  await sendText(env, from, lines.join('\n'));
+}
+
+async function cancelSchedule(env, from, idPrefix) {
+  const { keys } = await env.STATE.list({ prefix: 'scheduled:' });
+  if (!keys.length) {
+    await sendText(env, from, 'No scheduled posts to cancel.');
+    return;
+  }
+  if (!idPrefix && keys.length > 1) {
+    await sendText(env, from,
+      `You have ${keys.length} scheduled posts. Reply *schedule list* to see them, then *cancel schedule <id>* for a specific one.`
+    );
+    return;
+  }
+  const matches = idPrefix ? keys.filter(k => k.name.includes(idPrefix)) : keys;
+  if (!matches.length) {
+    await sendText(env, from, `No scheduled post matching *${idPrefix}*. Reply *schedule list* to see pending ones.`);
+    return;
+  }
+  for (const k of matches) await env.STATE.delete(k.name);
+  await sendText(env, from, `✅ Cancelled ${matches.length} scheduled post${matches.length > 1 ? 's' : ''}.`);
+}
+
+async function processDueSchedules(env) {
+  const { keys } = await env.STATE.list({ prefix: 'scheduled:' });
+  const now = Date.now();
+
+  for (const k of keys) {
+    const raw = await env.STATE.get(k.name);
+    if (!raw) continue;
+    const entry = JSON.parse(raw);
+    if (new Date(entry.scheduledForISO).getTime() > now) break; // chronological order — nothing later is due either
+
+    try {
+      await triggerPost(env, entry.client, entry.draftPath, entry.imageKeys, entry.documentKey);
+      await env.STATE.delete(k.name);
+      await sendText(env, entry.phone,
+        `⏰ Scheduled post for *${CLIENTS[entry.client]?.name || entry.client}* is going out now...`
+      );
+    } catch (e) {
+      const attempts = (entry.attempts || 0) + 1;
+      console.error(`[scheduled] dispatch failed for ${k.name} (attempt ${attempts}):`, e.message);
+      if (attempts >= MAX_SCHEDULE_ATTEMPTS) {
+        await env.STATE.delete(k.name);
+        await sendText(env, entry.phone,
+          `⚠️ Giving up on the scheduled post for *${CLIENTS[entry.client]?.name || entry.client}* after ${attempts} failed attempts.\n\n${e.message}\n\nReply *post* to try publishing it manually.`
+        );
+      } else {
+        await env.STATE.put(k.name, JSON.stringify({ ...entry, attempts }), { expirationTtl: 30 * 86400 });
+      }
+    }
+  }
+}
 
 // ── Text message handler ────────────────────────────────────────────────────
 
@@ -250,6 +488,27 @@ async function handleText(env, from, text) {
   if (lower === 'reset' || lower === 'cancel') {
     await clearState(env, from);
     await sendText(env, from, '🔄 Session cleared.\n\nReply *new post* to start fresh.');
+    return;
+  }
+
+  if (lower === 'schedule list' || lower === 'scheduled') {
+    await listSchedules(env, from);
+    return;
+  }
+
+  if (lower.startsWith('cancel schedule')) {
+    const idPrefix = text.slice('cancel schedule'.length).trim();
+    await cancelSchedule(env, from, idPrefix);
+    return;
+  }
+
+  if (lower === 'clear attachments' || lower === 'clear images') {
+    if (!state.client) {
+      await sendText(env, from, 'No active session.');
+      return;
+    }
+    await setState(env, from, { ...state, imageKeys: [], documentKey: null });
+    await sendText(env, from, '🗑 Cleared attached image(s)/document.');
     return;
   }
 
@@ -307,6 +566,16 @@ async function handleText(env, from, text) {
     return;
   }
 
+  if (state.client && state.step === 'pending_review' && lower.startsWith('schedule:')) {
+    const whenText = text.slice('schedule:'.length).trim();
+    if (!whenText) {
+      await sendText(env, from, 'Include a time. Example: *schedule: 9am tomorrow*');
+      return;
+    }
+    await scheduleDraft(env, from, state, whenText);
+    return;
+  }
+
   // Draft ready — treat any unrecognised message as an edit instruction.
   if (state.client && state.step === 'pending_review') {
     const preview = text.length > 80 ? text.slice(0, 80) + '…' : text;
@@ -318,12 +587,17 @@ async function handleText(env, from, text) {
   await sendText(env, from, 'Reply *new post* to generate a post, or *help* to see all commands.');
 }
 
-// ── Image message handler ─────────────────────────────────────────────────────
+// ── Image / document message handlers ───────────────────────────────────────
+//
+// Images and a document are mutually exclusive attachment modes — LinkedIn
+// posts are either a multi-image share or a single document/carousel share,
+// never both. Attaching one clears the other.
+
+const MAX_IMAGES = 9; // matches LinkedIn's own multi-image share UI limit
 
 async function handleImage(env, from, message) {
   const state = await getState(env, from);
 
-  // Only meaningful inside an active session — otherwise there's no draft to attach to.
   if (!state.client || state.step === 'idle') {
     await sendText(env, from, 'Start with *new post* first — then drop an image and I\'ll attach it to the draft.');
     return;
@@ -332,6 +606,12 @@ async function handleImage(env, from, message) {
   const mediaId = message.image?.id;
   if (!mediaId) {
     await sendText(env, from, 'Couldn\'t read that image — please send it again.');
+    return;
+  }
+
+  const existing = state.imageKeys || [];
+  if (existing.length >= MAX_IMAGES) {
+    await sendText(env, from, `You already have ${MAX_IMAGES} images attached (LinkedIn's limit for a multi-image post). Reply *clear attachments* to start over, or *post*/*schedule:* to publish as-is.`);
     return;
   }
 
@@ -344,15 +624,56 @@ async function handleImage(env, from, message) {
     return;
   }
 
-  const mediaKey = `media:${from}`;
-  // Keep 24h so a slow "Post it" still resolves; a new post detaches by resetting state.
-  await env.STATE.put(mediaKey, bytes, { expirationTtl: 86400, metadata: { mime } });
-  await setState(env, from, { ...state, imageKey: mediaKey, imageMime: mime });
+  const mediaKey = `media:${from}:${existing.length}`;
+  // Keep 7 days so it survives a scheduled post, not just an immediate "Post it";
+  // a new post detaches by resetting state regardless.
+  await env.STATE.put(mediaKey, bytes, { expirationTtl: 604800, metadata: { mime } });
+
+  const imageKeys = [...existing, mediaKey];
+  // Attaching an image clears any previously attached document (mutually exclusive).
+  await setState(env, from, { ...state, imageKeys, documentKey: null });
+
+  const count = imageKeys.length;
+  await sendText(env, from,
+    state.step === 'pending_review'
+      ? `✅ Image ${count > 1 ? `${count} attached (${count} total)` : 'attached'}. Tap *Post it* to publish with ${count > 1 ? 'these images' : 'this image'}, or send more (up to ${MAX_IMAGES}).`
+      : '✅ Image saved — I\'ll attach it when your draft is ready.'
+  );
+}
+
+async function handleDocument(env, from, message) {
+  const state = await getState(env, from);
+
+  if (!state.client || state.step === 'idle') {
+    await sendText(env, from, 'Start with *new post* first — then send a PDF and I\'ll attach it as a document post.');
+    return;
+  }
+
+  const mediaId = message.document?.id;
+  const filename = message.document?.filename || 'document.pdf';
+  if (!mediaId) {
+    await sendText(env, from, 'Couldn\'t read that file — please send it again.');
+    return;
+  }
+
+  await sendText(env, from, '📎 Saving your document...');
+  const { bytes, mime } = await downloadWhatsAppMedia(env, mediaId);
+
+  if (mime !== 'application/pdf') {
+    await sendText(env, from, `Only PDF documents are supported for document/carousel posts (got ${mime}).`);
+    return;
+  }
+
+  const docKey = `media:${from}:doc`;
+  await env.STATE.put(docKey, bytes, { expirationTtl: 604800, metadata: { mime, filename } });
+
+  // A document clears any previously attached images (mutually exclusive).
+  await setState(env, from, { ...state, documentKey: docKey, imageKeys: [] });
 
   await sendText(env, from,
     state.step === 'pending_review'
-      ? '✅ Image attached. Tap *Post it* to publish the draft with this image.'
-      : '✅ Image saved — I\'ll attach it when your draft is ready.'
+      ? `✅ Document attached (*${filename}*). Tap *Post it* to publish as a document/carousel post.`
+      : '✅ Document saved — I\'ll attach it when your draft is ready.'
   );
 }
 
@@ -402,17 +723,24 @@ async function handleButtonReply(env, from, id) {
   if (id === 'action_post')       { await doPost(env, from, state); return; }
   if (id === 'action_skip')       { await clearState(env, from); await sendText(env, from, '⏭ Draft skipped. Reply *new post* to generate another.'); return; }
   if (id === 'action_regenerate') { await doRegenerate(env, from, state); return; }
+
+  if (id.startsWith('commentreply:')) {
+    const [, action, replyId] = id.split(':');
+    await handleCommentReplyButton(env, from, action, replyId);
+    return;
+  }
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────────
 
 async function doPost(env, from, state) {
   // Send confirmation first so the user gets feedback immediately.
-  const withImage = state.imageKey ? ' (with your image)' : '';
-  await sendText(env, from, `✅ Posting to LinkedIn now${withImage}...\n\nCheck your profile in ~30 seconds.`);
+  const imageCount = (state.imageKeys || []).length;
+  const withMedia = state.documentKey ? ' (with your document)' : imageCount > 0 ? ` (with ${imageCount} image${imageCount > 1 ? 's' : ''})` : '';
+  await sendText(env, from, `✅ Posting to LinkedIn now${withMedia}...\n\nCheck your profile in ~30 seconds.`);
   try {
-    await triggerPost(env, state.client || null, state.draftPath || null, state.imageKey || null);
-    // Don't delete the KV image here — the Action fetches it moments later. TTL
+    await triggerPost(env, state.client || null, state.draftPath || null, state.imageKeys || [], state.documentKey || null);
+    // Don't delete the KV media here — the Action fetches it moments later. TTL
     // (and the next post resetting state) handles cleanup without a race.
     await clearState(env, from);
   } catch (e) {
@@ -440,6 +768,65 @@ async function doRegenerate(env, from, state) {
     // Revert so the user isn't stuck at 'generating' forever.
     await setState(env, from, prevState);
     throw e;
+  }
+}
+
+// ── Comment reply approval ──────────────────────────────────────────────────
+//
+// Separate from the main draft-review conversational slot (state:<phone>) —
+// multiple comment replies can be pending approval at once, each tracked
+// independently under commentreply:<phone>:<id> so they don't interfere with
+// an in-progress "new post" flow or each other.
+
+async function shortHash(input) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).slice(0, 5).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function notifyCommentReply(env, body) {
+  const { phone, client, postUrn, commentUrn, commentText, draftedReply } = body;
+  const replyId = await shortHash(commentUrn);
+  const key = `commentreply:${phone}:${replyId}`;
+
+  await env.STATE.put(key, JSON.stringify({ client, postUrn, commentUrn, commentText, draftedReply }), {
+    expirationTtl: 7 * 86400,
+  });
+
+  const clientName = CLIENTS[client]?.name || client;
+  const truncated = commentText.length > 200 ? commentText.slice(0, 200) + '…' : commentText;
+  await sendButtons(env, phone,
+    `💬 *New comment on ${clientName}'s post*\n\n"${truncated}"\n\n*Drafted reply:*\n"${draftedReply}"`,
+    [
+      { id: `commentreply:post:${replyId}`, title: '✅ Post reply' },
+      { id: `commentreply:skip:${replyId}`, title: '❌ Skip' },
+    ]
+  );
+}
+
+async function handleCommentReplyButton(env, from, action, replyId) {
+  const key = `commentreply:${from}:${replyId}`;
+  const raw = await env.STATE.get(key);
+  if (!raw) {
+    await sendText(env, from, 'That comment reply is no longer pending (expired or already handled).');
+    return;
+  }
+  const entry = JSON.parse(raw);
+
+  if (action === 'skip') {
+    await env.STATE.delete(key);
+    await sendText(env, from, '⏭ Skipped.');
+    return;
+  }
+
+  if (action === 'post') {
+    await sendText(env, from, '✅ Posting reply...');
+    try {
+      await triggerReplyComment(env, entry.client, entry.postUrn, entry.draftedReply);
+      await env.STATE.delete(key);
+    } catch (e) {
+      await sendText(env, from, '⚠️ Failed to trigger reply — please try again.');
+      throw e;
+    }
   }
 }
 
@@ -472,7 +859,13 @@ async function sendHelp(env, from) {
     `• *[your instruction]* — refine the draft once preview arrives\n` +
     `  e.g. _make it shorter_\n` +
     `  e.g. _sharpen the opening hook_\n` +
-    `• *send an image* — once you have a draft, drop a photo (JPEG/PNG/GIF) and it'll be attached to the post\n` +
+    `• *send an image* — once you have a draft, drop a photo (JPEG/PNG/GIF); send more for a multi-image post (up to 9)\n` +
+    `• *send a PDF* — attach it as a document/carousel post instead (clears any attached images)\n` +
+    `• *clear attachments* — remove any attached image(s)/document\n` +
+    `• *schedule: [when]* — once you have a draft, schedule it instead of posting now\n` +
+    `  e.g. _schedule: 9am tomorrow_ · _schedule: in 2 hours_ · _schedule: 2026-08-01 09:00_\n` +
+    `• *schedule list* — see pending scheduled posts\n` +
+    `• *cancel schedule [id]* — cancel a pending scheduled post\n` +
     `• *status* — check bot status\n` +
     `• *reset* — clear stuck session and start over\n` +
     `• *help* — show this menu`
@@ -530,11 +923,12 @@ async function triggerGenerate(env, client, pillar, format, seed, phone, url) {
   await ghDispatch(env, 'generate.yml', inputs);
 }
 
-async function triggerPost(env, client, draftPath, imageKey) {
+async function triggerPost(env, client, draftPath, imageKeys, documentKey) {
   const inputs = {};
-  if (client)    inputs.client     = client;
-  if (draftPath) inputs.draft_path = draftPath;
-  if (imageKey)  inputs.image_key  = imageKey;
+  if (client)                    inputs.client       = client;
+  if (draftPath)                 inputs.draft_path   = draftPath;
+  if (imageKeys && imageKeys.length) inputs.image_keys  = imageKeys.join(',');
+  if (documentKey)               inputs.document_key = documentKey;
   await ghDispatch(env, 'post.yml', inputs);
 }
 
@@ -547,6 +941,10 @@ async function triggerEdit(env, from, state, instruction) {
   if (state.pillar)    inputs.pillar     = state.pillar;
   if (state.draftPath) inputs.draft_path = state.draftPath;
   await ghDispatch(env, 'edit.yml', inputs);
+}
+
+async function triggerReplyComment(env, client, postUrn, replyText) {
+  await ghDispatch(env, 'reply-comment.yml', { client, post_urn: postUrn, reply_text: replyText });
 }
 
 async function ghDispatch(env, workflow, inputs) {

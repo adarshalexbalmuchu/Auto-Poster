@@ -69,7 +69,7 @@ export async function sendDraftNotification(result) {
   });
 
   await sendButtons(phoneNumberId, token, to,
-    'What would you like to do?\n\nTo refine, reply *edit: [your instruction]*\ne.g. _edit: sharpen the hook_',
+    'What would you like to do?\n\nTo refine, reply *edit: [your instruction]*\ne.g. _edit: sharpen the hook_\n\nOr *schedule: [when]* to post later, e.g. _schedule: 9am tomorrow_',
     [
       { id: 'action_post',       title: '✅ Post it'    },
       { id: 'action_skip',       title: '❌ Skip'       },

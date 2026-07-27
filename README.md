@@ -65,6 +65,8 @@ src/
   auth.js         — LinkedIn OAuth flow (run once per client, ~60 days)
   analytics.js    — Engagement metrics for published posts (CLI + feedback loop)
   notify-stats.js — WhatsApp 24h engagement summary for recent posts
+  check-comments.js      — Polls for new comments, drafts a reply, sends for WhatsApp approval
+  post-comment-reply.js  — Publishes an approved comment reply
   check-tokens.js — LinkedIn token expiry checker (sends WhatsApp warning)
   cli-utils.js    — Shared CLI argument parsing
 
@@ -88,6 +90,8 @@ drafts/           — Generated posts (JSON), committed to git
   edit.yml             — Apply edit instruction to latest draft (dispatched by Worker / manual)
   token-check.yml      — Check LinkedIn token expiry (every Monday 08:00 UTC)
   analytics-notify.yml — WhatsApp 24h stats for posts published yesterday (daily 08:30 UTC)
+  comment-check.yml    — Poll for new comments and draft replies (every 30 min)
+  reply-comment.yml    — Publish an approved comment reply (dispatched by Worker)
   ci.yml               — Syntax/JSON/worker-config sanity checks on every PR and push to main
 ```
 
@@ -149,20 +153,45 @@ WORKER_CALLBACK_SECRET   — same value as GitHub Actions secret
 | `skip` | Discard latest draft |
 | `regenerate` | Rewrite with same topic |
 | `edit: [instruction]` | Refine current draft — e.g. `edit: sharpen the hook` |
-| _(send a photo)_ | Attach an image to the current draft — it's posted alongside the text |
+| _(send a photo)_ | Attach an image — send more for a multi-image post (up to 9) |
+| _(send a PDF)_ | Attach it as a document/carousel post instead (clears any attached images) |
+| `clear attachments` | Remove any attached image(s)/document |
+| `schedule: [when]` | Schedule the current draft instead of posting now — e.g. `schedule: 9am tomorrow` |
+| `schedule list` | See pending scheduled posts |
+| `cancel schedule [id]` | Cancel a pending scheduled post |
 | `status` | Check bot is running |
 | `help` | Show all commands |
 
 The edit command is stateful — you can edit multiple times before posting. Each edit targets the same draft file.
 
-### Attaching an image
+### Scheduling a post
 
-Once you have a draft (preview received), just **send a photo in the chat**. The Worker downloads it, stores it in KV, and attaches it to the current draft. Tap **Post it** and it publishes as a LinkedIn image share (text + image).
+Once you have a draft ready, reply `schedule: [when]` instead of tapping **Post it**:
 
-- Supported types: JPEG, PNG, GIF (LinkedIn feed-share formats).
-- The image is bridged to the posting step (which runs in GitHub Actions) via an authenticated `/media/<key>` Worker endpoint — workflow inputs can't carry binary, so the Action fetches the bytes back at post time using `WORKER_CALLBACK_SECRET`.
-- Starting a fresh `new post` detaches any previously attached image.
+```
+schedule: 9am tomorrow
+schedule: tomorrow at 9:30am
+schedule: 5pm today
+schedule: in 2 hours
+schedule: in 30 minutes
+schedule: 2026-08-01 09:00
+```
+
+Times are interpreted in the client's own timezone (`postingSchedule.timezone` in `clients/<id>.json` — UK for Irfan, IST for Alex). A Cloudflare Cron Trigger checks every 15 minutes for due posts and fires them automatically — so scheduling is accurate to about ±15 minutes, not to the second. A bare time with no day (e.g. `schedule: 9am`) means today if that time hasn't passed yet, otherwise tomorrow.
+
+Reply `schedule list` any time to see what's pending, and `cancel schedule [id]` (the id is the `YYYY-MM-DDTHH:MM` reference shown in the confirmation) to cancel one. If a schedule dispatch fails (e.g. a transient GitHub API error), it retries on the next 15-minute tick, up to 4 attempts, before giving up and notifying you.
+
+### Attaching images or a document
+
+Once you have a draft (preview received), just **send a photo in the chat**. The Worker downloads it, stores it in KV, and attaches it to the current draft. Send another photo and it's added to the same post — up to 9 images publish as a LinkedIn multi-image (carousel-style) share. Tap **Post it** and it publishes as a LinkedIn image share (text + image(s)).
+
+Send a **PDF** instead to post it as a native document/carousel post. Images and a document are mutually exclusive — attaching one clears the other. Reply `clear attachments` to remove whatever's currently attached without starting a new draft.
+
+- Supported image types: JPEG, PNG, GIF. Documents: PDF only.
+- Media is bridged to the posting step (which runs in GitHub Actions) via an authenticated `/media/<key>` Worker endpoint — workflow inputs can't carry binary, so the Action fetches the bytes back at post time using `WORKER_CALLBACK_SECRET`.
+- Starting a fresh `new post` detaches any previously attached media.
 - No LinkedIn re-auth is needed — image shares use the same `w_member_social` scope as text.
+- **Confidence note:** multi-image posts follow the same proven pattern as the original single-image feature (high confidence). Document/carousel posts use a less-documented part of LinkedIn's classic API (the `feedshare-document` recipe) that hasn't been verified against a live PDF post — if it fails, see the comment above `postDocument()` in `src/linkedin.js` for the two most likely fixes.
 
 ---
 
@@ -174,6 +203,27 @@ npm run analytics -- --client irfan --count 5
 ```
 
 Engagement data also feeds back into generation automatically — recent high/low performers are shown to Claude during topic selection. A daily cron (`analytics-notify.yml`) sends a WhatsApp summary for posts published ~24h ago.
+
+---
+
+## Comment reply assist
+
+A cron (`comment-check.yml`, every 30 minutes) checks posts published in the last 14 days for new comments. For each new one (skipping the client's own comments), Claude drafts a short reply in the client's voice and sends it to WhatsApp:
+
+```
+💬 New comment on Alex's post
+
+"This is such a great point about civic tech!"
+
+Drafted reply:
+"Thanks, glad it landed! Curious what you're building in that space."
+
+[✅ Post reply]  [❌ Skip]
+```
+
+Tap **Post reply** to publish it, or **Skip** to dismiss. Already-seen comments are tracked per draft (`seenCommentIds` in `drafts/*.json`) so you're never notified about the same comment twice, and multiple pending replies can be in flight at once — approving or skipping one doesn't affect the others or any in-progress "new post" flow.
+
+**Confidence note:** LinkedIn has no comment webhooks for member posts, so this polls instead. Comment listing/creation uses the same classic Social Actions API family as the engagement-count endpoint `analytics.js` already relies on successfully, but the specific `/comments` sub-resource hasn't been exercised against the live API yet — see the notes above `getComments()`/`postComment()` in `src/linkedin.js` for exactly what to verify on first real use, including that replies currently post as a new top-level comment rather than a threaded reply nested under the original.
 
 ---
 

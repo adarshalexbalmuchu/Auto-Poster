@@ -9,8 +9,11 @@ on:
       draft_path:
         description: 'Exact draft file path (leave blank to auto-find latest)'
         required: false
-      image_key:
-        description: 'Worker KV key for an image attached via WhatsApp (leave blank for text-only)'
+      image_keys:
+        description: 'Comma-separated Worker KV keys for image(s) attached via WhatsApp (leave blank for text-only)'
+        required: false
+      document_key:
+        description: 'Worker KV key for a PDF document attached via WhatsApp (posts as a document/carousel share)'
         required: false
 
 permissions: {}
@@ -53,7 +56,8 @@ jobs:
           WORKER_CALLBACK_SECRET:          ${{ secrets.WORKER_CALLBACK_SECRET }}
           INPUT_CLIENT:                    ${{ inputs.client }}
           INPUT_DRAFT_PATH:                ${{ inputs.draft_path }}
-          INPUT_IMAGE_KEY:                 ${{ inputs.image_key }}
+          INPUT_IMAGE_KEYS:                ${{ inputs.image_keys }}
+          INPUT_DOCUMENT_KEY:              ${{ inputs.document_key }}
         run: node src/post.js
 
       - name: Commit posted status
