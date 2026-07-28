@@ -80,6 +80,7 @@ worker/
 clients/
   irfan.json      — Irfan's voice profile, pillars, posting schedule
   alex.json       — Alex's voice profile, pillars, posting schedule
+  mentions.json   — Manually maintained name → LinkedIn URN map for @mention tagging
 
 drafts/           — Generated posts (JSON), committed to git
   history.json    — Published post log (topic deduplication)
@@ -193,6 +194,31 @@ Send a **PDF** instead to post it as a native document/carousel post. Images and
 - Starting a fresh `new post` detaches any previously attached media.
 - No LinkedIn re-auth is needed — image shares use the same `w_member_social` scope as text.
 - **Confidence note:** multi-image posts follow the same proven pattern as the original single-image feature (high confidence). Document/carousel posts use a less-documented part of LinkedIn's classic API (the `feedshare-document` recipe) that hasn't been verified against a live PDF post — if it fails, see the comment above `postDocument()` in `src/linkedin.js` for the two most likely fixes.
+
+---
+
+## Tagging companies or people in posts
+
+LinkedIn's real @mention tagging (clickable, notifies the tagged company/person) requires knowing their LinkedIn URN — there's no accessible API for looking up an arbitrary company by name with this app's permissions (that needs LinkedIn's Marketing Developer Platform partner access, a separate application process). So tagging here is a **manually maintained allowlist**, not automatic for every name Claude happens to write.
+
+Add entries to `clients/mentions.json`:
+
+```json
+{
+  "Anthropic": { "type": "organization", "urn": "urn:li:organization:1234567" },
+  "FloodReady Delhi": { "type": "organization", "urn": "urn:li:organization:7654321" }
+}
+```
+
+- `type` is `"organization"` for a company page or `"person"` for an individual profile.
+- The key (`"Anthropic"`) must match the exact text as it would appear in a generated post — matching is case-insensitive but whole-word, so `"Anthropic"` won't accidentally match inside a longer word.
+- Whenever that exact name shows up in a post, it gets tagged with the given URN. Everything not in this file stays as plain text — nothing else changes.
+
+**Finding a URN:** there's no clean self-serve lookup, so this takes a bit of manual digging:
+- **Organizations:** open the company's LinkedIn page, view page source (or use browser dev tools), and search for `urn:li:organization:` or `"companyId"` in the embedded page data — the numeric ID is usually there. Admins of a page can also often find it in their own analytics/admin URLs.
+- **People:** similar approach on a profile page, searching for `urn:li:member:` or `urn:li:person:` in the page source — LinkedIn has made this harder to find on other people's profiles over time, so this is the less reliable of the two. Tagging companies is the more practical use case.
+
+**Confidence note:** this uses LinkedIn's documented character-offset "attributed text" pattern for the classic `/v2/ugcPosts` endpoint, unverified against the live API. If LinkedIn rejects a post because of a mention tag, the code automatically retries once with the tags stripped — a bad or wrong URN can never take down the whole post, worst case the mention just doesn't get tagged and a warning is logged.
 
 ---
 
