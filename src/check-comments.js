@@ -14,7 +14,7 @@
 import 'dotenv/config';
 import { readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import Anthropic from '@anthropic-ai/sdk';
-import { loadClient, MODEL, HARD_RULES } from './generate.js';
+import { loadClient, MODEL, buildHardRules } from './generate.js';
 import { getComments, envKey } from './linkedin.js';
 
 const DRAFTS_DIR = './drafts';
@@ -41,7 +41,7 @@ async function draftReply(client, commentText) {
   const prompt =
     `You are ${client.name}, replying to a comment on your own LinkedIn post.\n\n` +
     `VOICE AND STYLE RULES:\n${client.voice}\n\n` +
-    `HARD RULES:\n${HARD_RULES}\n` +
+    `HARD RULES:\n${buildHardRules(client)}\n` +
     `- Keep it short — a real reply, not a mini-essay. 1-3 sentences.\n` +
     `- No preamble. Return only the reply text.\n\n` +
     `Comment: "${commentText}"\n\n` +

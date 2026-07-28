@@ -12,7 +12,7 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { loadClient, MODEL, HARD_RULES } from './generate.js';
+import { loadClient, MODEL, buildHardRules } from './generate.js';
 import { sendDraftNotification, sendWhatsApp } from './whatsapp.js';
 import { requireApiKey } from './cli-utils.js';
 import { findLatestDraft } from './drafts.js';
@@ -50,7 +50,7 @@ async function applyEdit(draft, client, instruction) {
   const staticContent =
     `You are editing a LinkedIn post draft for ${client.name}.\n\n` +
     `VOICE AND STYLE RULES — must be preserved through the edit:\n${client.voice}\n\n` +
-    `HARD RULES that must still hold after editing:\n${HARD_RULES}\n` +
+    `HARD RULES that must still hold after editing:\n${buildHardRules(client)}\n` +
     `- No preamble. Return only the revised post text.`;
 
   const dynamicContent =

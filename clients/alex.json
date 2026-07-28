@@ -79,6 +79,12 @@
     "timeIST": "09:00",
     "timezone": "Asia/Kolkata"
   },
+  "contentDepth": {
+    "roughDraftMaxWords": 250,
+    "minWords": 350,
+    "maxWords": 550,
+    "maxNumbers": 4
+  },
   "formats": [
     "text",
     "list",

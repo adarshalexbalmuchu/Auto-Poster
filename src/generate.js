@@ -27,15 +27,33 @@ const anthropic = new Anthropic();
 export const MODEL = 'claude-sonnet-4-6';
 const TOPIC_MODEL = 'claude-haiku-4-5-20251001';
 
-export const HARD_RULES =
-  `- Do NOT use em dashes (—). Use a period or a new sentence instead.\n` +
-  `- Do NOT use bullet points or numbered lists of any kind.\n` +
-  `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".\n` +
-  `- ONE strong number maximum. Lead with the insight, use the number as proof.\n` +
-  `- The first 2 lines must work as a standalone hook — LinkedIn shows ~210 characters before "see more" and most readers never click.\n` +
-  `- Target 150–200 words total (body + hashtags). Posts in the 900–1200 character range consistently outperform shorter and longer ones.\n` +
-  `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
-  `- No preamble. No "here's a post:". Just the post itself.`;
+// Per-client override point for how long/deep posts should be. Defaults below
+// exactly match the original hardcoded values, so any client without a
+// `contentDepth` field in their clients/<id>.json (e.g. Irfan) is unaffected.
+const DEFAULT_CONTENT_DEPTH = { roughDraftMaxWords: 100, minWords: 150, maxWords: 200, maxNumbers: 1 };
+
+export function getContentDepth(client) {
+  return { ...DEFAULT_CONTENT_DEPTH, ...(client.contentDepth || {}) };
+}
+
+export function buildHardRules(client) {
+  const { minWords, maxWords, maxNumbers } = getContentDepth(client);
+  const numberRule = maxNumbers <= 1
+    ? `- ONE strong number maximum. Lead with the insight, use the number as proof.\n`
+    : `- Up to ${maxNumbers} specific numbers/stats, each one real and sourced, never padding. Every number has to earn its place — advance the argument, not just look impressive.\n`;
+
+  return (
+    `- Do NOT use em dashes (—). Use a period or a new sentence instead.\n` +
+    `- Do NOT use bullet points or numbered lists of any kind.\n` +
+    `- Do NOT use any of these words: delve, leverage, unlock, harness, cutting-edge, game-changer, seamlessly, transformative, revolutionize, "it is worth noting", "in today's rapidly evolving landscape".\n` +
+    numberRule +
+    `- The first 2 lines must work as a standalone hook — LinkedIn shows ~210 characters before "see more" and most readers never click.\n` +
+    // ~6 chars/word average — the original 150-200 word / 900-1200 char figures imply exactly that ratio.
+    `- Target ${minWords}–${maxWords} words total (body + hashtags), roughly ${minWords * 6}–${maxWords * 6} characters.\n` +
+    `- Hashtags on their own lines at the very bottom, separated from the body by a blank line. Use 2–3 hashtags.\n` +
+    `- No preamble. No "here's a post:". Just the post itself.`
+  );
+}
 
 // Strict pattern keeps the id safe to interpolate into a ./clients/ path.
 const CLIENT_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -324,16 +342,32 @@ function getPillarHashtags(client, pillarId, max = 3) {
   return pillar.hashtags.slice(0, max).join(', ');
 }
 
-const FORMAT_GUIDES = {
-  text:       'Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. 150–200 words. Mobile readers scan vertically — white space is not optional.',
-  list:       'NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. 150–200 words. Each paragraph should land on its own.',
-  story:      'A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. 150–200 words. Make the reader feel like they were there.',
-  notebook:   'Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. 150–200 words. The specificity of the detail is the point — resist the urge to explain what it means.',
+// text/list/story/notebook are the "normal" essay-style formats — their length
+// scales with the client's contentDepth. short/raw/contrarian/prediction are
+// deliberately terse by design regardless of that setting, so they stay fixed.
+const SCALABLE_FORMAT_GUIDES = {
+  text:     (min, max) => `Short punchy paragraphs — mix of 1-sentence punches and 2-3 sentence paragraphs. Blank line between every paragraph. ${min}–${max} words. Mobile readers scan vertically — white space is not optional.`,
+  list:     (min, max) => `NO bullet points or numbered lists. Use short punchy paragraphs, each point as its own thought with a blank line between. ${min}–${max} words. Each paragraph should land on its own.`,
+  story:    (min, max) => `A first-person scene. Open with where you were or what you saw — one specific moment. What happened. What it meant. Blank line between beats. ${min}–${max} words. Make the reader feel like they were there.`,
+  notebook: (min, max) => `Field-note style. Observational, grounded, specific detail. Short paragraphs, blank lines between. ${min}–${max} words. The specificity of the detail is the point — resist the urge to explain what it means.`,
+};
+
+const FIXED_FORMAT_GUIDES = {
   short:      'One to three sentences. That is the entire post. No explanation. No build-up. No hashtags. Just the single thing that would stop the right person mid-scroll. Less is more. If you can say it in one sentence, say it in one sentence.',
   raw:        'Write like you are thinking out loud — not drafting. Use "actually" and "wait" and "no —". Interrupt yourself. Let a sentence trail off. Change direction. Do not tidy it up. The roughness is the point. 80–120 words maximum.',
   contrarian: 'Take the position in this space that most people would push back on. State it directly in the first sentence. Do not hedge. Do not add "but of course." Do not soften it at the end. Let it sit there. 100–150 words.',
   prediction: 'Make one specific, datable prediction about something in this space. Name exactly what you think will happen and by when. Commit to it. No caveats, no "it depends". Wrong confident predictions get more engagement than safe hedged ones. 80–120 words.',
 };
+
+function getFormatGuide(format, client) {
+  if (SCALABLE_FORMAT_GUIDES[format]) {
+    const { minWords, maxWords } = getContentDepth(client);
+    return SCALABLE_FORMAT_GUIDES[format](minWords, maxWords);
+  }
+  if (FIXED_FORMAT_GUIDES[format]) return FIXED_FORMAT_GUIDES[format];
+  const { minWords, maxWords } = getContentDepth(client);
+  return SCALABLE_FORMAT_GUIDES.text(minWords, maxWords);
+}
 
 // Formats where hashtags would break the style.
 const NO_HASHTAG_FORMATS = new Set(['short', 'raw']);
@@ -343,7 +377,7 @@ function buildPostPromptParts(client, topicData, contextText = null) {
   const useHashtags = NO_HASHTAG_FORMATS.has(topicData.format)
     ? null
     : getPillarHashtags(client, topicData.pillarId);
-  const guide = FORMAT_GUIDES[topicData.format] || FORMAT_GUIDES.text;
+  const guide = getFormatGuide(topicData.format, client);
 
   const staticPart =
 `You are writing a LinkedIn post for ${client.name}.
@@ -352,7 +386,7 @@ VOICE AND STYLE RULES — follow every one precisely:
 ${client.voice}
 
 HARD RULES:
-${HARD_RULES}
+${buildHardRules(client)}
 
 HUMAN TEXTURE — this is mandatory, not optional:
 - Write like this was typed in a real moment, not drafted and polished. Polish is the enemy.
@@ -454,15 +488,17 @@ export async function generateForClient(clientId, opts = {}) {
   }
 
   // Pass 1 — raw first thought, no rules. Write like a human would before editing.
+  const { roughDraftMaxWords, maxWords } = getContentDepth(client);
   const contextBlock = contextText
-    ? `Source material to draw from:\n---\n${contextText}\n---\n\n`
+    ? `Source material to draw from:\n---\n${contextText}\n---\n\n` +
+      `Pull out the specific facts, numbers, and details that actually matter here — plural, not just one. Don't just react to the source in general; build the thought around what it actually says.\n\n`
     : '';
   const roughMsg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 512,
+    max_tokens: Math.max(512, Math.round(roughDraftMaxWords * 2.2)),
     messages: [{
       role: 'user',
-      content: `${contextBlock}You are ${client.name}. Something just happened or you just noticed something and you want to write about it on LinkedIn.\n\nThe moment / observation: ${topicData.topic}\nWhat makes it interesting: ${topicData.angle}\n\nWrite your raw first thought — like you're typing a note to yourself before you edit it. No polish. No structure. No rules. Just what you'd actually say. Keep it under 100 words.`,
+      content: `${contextBlock}You are ${client.name}. Something just happened or you just noticed something and you want to write about it on LinkedIn.\n\nThe moment / observation: ${topicData.topic}\nWhat makes it interesting: ${topicData.angle}\n\nWrite your raw first thought — like you're typing a note to yourself before you edit it. No polish. No structure. No rules. Just what you'd actually say. Keep it under ${roughDraftMaxWords} words.`,
     }],
   });
 
@@ -476,7 +512,7 @@ export async function generateForClient(clientId, opts = {}) {
   const { staticPart, dynamicPart } = buildPostPromptParts(client, topicData, contextText);
   const postMsg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: Math.max(1024, Math.round(maxWords * 2.2)),
     messages: [{
       role: 'user',
       content: [
