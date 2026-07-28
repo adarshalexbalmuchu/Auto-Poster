@@ -49,6 +49,25 @@ Pillars are weighted by `frequency` and `last_posted` — the most overdue pilla
 
 Adding a client is config-only: drop a `clients/<id>.json` file (same shape as the existing ones) — no code changes needed. To surface it in the WhatsApp bot, also add it to `CLIENTS` in `worker/index.js`.
 
+### Content depth (length, number of stats)
+
+Optional `contentDepth` field in `clients/<id>.json` controls how long and how data-dense posts are — how much word budget Claude has to develop an argument versus staying at a one-line-per-fact gist. Omit it entirely and a client gets the original defaults (Irfan's current setup):
+
+```json
+"contentDepth": {
+  "roughDraftMaxWords": 250,
+  "minWords": 350,
+  "maxWords": 550,
+  "maxNumbers": 4
+}
+```
+
+- `minWords`/`maxWords` — target length for the "normal" formats (`text`, `list`, `story`, `notebook`). Deliberately terse formats (`short`, `raw`, `contrarian`, `prediction`) keep their own fixed, shorter targets regardless of this setting — that's by design, not a bug.
+- `roughDraftMaxWords` — the word cap on the internal "raw first thought" pass that happens before the post gets shaped. Should scale roughly with `maxWords` so the raw draft actually has enough material to work with.
+- `maxNumbers` — how many distinct stats/numbers a post can use. Default is 1 ("lead with one strong number"); raise it when the source material has several data points worth citing together (e.g. two survey percentages plus a real-world example).
+
+Alex is currently set to 350–550 words / up to 4 numbers, for longer, more thoroughly-argued posts. To get the most out of it, combine it with a source URL **and** a specific direction in the same WhatsApp message (see "Combining a source link with your own direction" above) — e.g. pasting a Pew Research link along with "compare the US/China numbers, tie it to India's builder-vs-user gap, bring in Sarvam AI and Ola as examples" gives Claude both the real data and the specific angle to develop at length, instead of a generic one-paragraph reaction.
+
 ---
 
 ## Project structure

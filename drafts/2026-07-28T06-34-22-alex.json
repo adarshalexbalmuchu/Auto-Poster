@@ -1,0 +1,17 @@
+{
+  "id": "2026-07-28T06-34-22-alex",
+  "clientId": "alex",
+  "generatedAt": "2026-07-28T06:34:22.933Z",
+  "topicData": {
+    "pillarId": "ai-watch",
+    "topic": "sort of a tech updates",
+    "angle": "Write from the specific facts and details in the source material provided.",
+    "format": "text"
+  },
+  "postText": "Claude watched someone do a task once. Then it could do it.\n\nNot trained. Not prompted 47 times. Just. Shown once.\n\nidk why that one got me but it did. whole week was chaos, Opus 5 beating their own model at half the price, ChatGPT controlling your desktop, Google dropped three models in like a single Tuesday. all of it blurring together.\n\nbut the record-a-skill thing felt different. like a different category of different, not just a faster model or a cheaper API call.\n\ni kept thinking about it while building. right now if you want an agent to do something new you're writing prompts, testing, breaking, fixing, crying a little. this is just. show it once. it learns.\n\nthat's not a tool anymore ngl. that starts feeling like something else.\n\nstill don't know how fragile the skill is after recording. does it hold if context shifts even slightly. does it generalise or just memorise the exact thing it saw. genuinely no idea.\n\nif you've actually tried it curious what broke first.\n\n#AI #BuildingWithAI #AgentDev",
+  "sourceUrl": "https://www.youtube.com/watch?v=nExo3f75EAs",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null,
+  "lastEditedAt": "2026-07-28T06:38:32.478Z"
+}
