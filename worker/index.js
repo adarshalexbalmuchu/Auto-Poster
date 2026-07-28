@@ -542,13 +542,20 @@ async function handleText(env, from, text) {
   }
 
   if (state.step === 'awaiting_seed') {
-    const isUrl = /^https:\/\//i.test(text);
-    const seed = (lower === 'none' || isUrl) ? null : text;
-    const contextUrl = isUrl ? text : null;
+    // A URL can appear anywhere in the message, optionally alongside direction
+    // text — e.g. "https://youtu.be/xyz focus on the training-data angle".
+    // URL-only (or "none") behaves exactly as before: Claude picks the angle
+    // from the source material alone. This is purely additive — nothing
+    // changes for the simple "just paste a link" case.
+    const urlMatch = text.match(/https:\/\/\S+/i);
+    const contextUrl = urlMatch ? urlMatch[0].replace(/[.,;:!?)\]}'"]+$/, '') : null;
+    const remainder = contextUrl ? text.replace(urlMatch[0], '').replace(/\s+/g, ' ').trim() : text.trim();
+    const seed = (lower === 'none' || !remainder) ? null : remainder;
+
     const prevState = { ...state };
     await setState(env, from, { ...state, seed, contextUrl, step: 'generating' });
     const feedbackMsg = contextUrl
-      ? `🔗 Reading source URL...\n\nGenerating post for *${CLIENTS[state.client]?.name || state.client}*. Preview incoming shortly.`
+      ? `🔗 Reading source URL...\n\nGenerating post for *${CLIENTS[state.client]?.name || state.client}*${seed ? ' with your direction' : ''}. Preview incoming shortly.`
       : `⏳ Generating post for *${CLIENTS[state.client]?.name || state.client}*...\n\nYou'll receive a preview shortly.`;
     await sendText(env, from, feedbackMsg);
     try {
@@ -716,7 +723,7 @@ async function handleButtonReply(env, from, id) {
     const [, clientId, pillarPart] = id.split(':');
     const pillar = pillarPart === 'claude' ? null : pillarPart;
     await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
-    await sendText(env, from, 'Any topic seed or source URL?\n\nReply with a topic hint, paste an *https://...* link (Claude will read it), or say *none*.');
+    await sendText(env, from, 'Any topic seed or source URL?\n\nReply with a topic hint, paste an *https://...* link — an article or a YouTube video (Claude will read it) — or say *none*.\n\nYou can combine both: paste a link plus your own direction in the same message, e.g. _https://... focus on the pricing angle, keep it skeptical_');
     return;
   }
 
@@ -852,7 +859,7 @@ async function sendHelp(env, from) {
   await sendText(env, from,
     `*Auto-Poster Commands*\n\n` +
     `• *new post* — guided post generation\n` +
-    `  When asked for a seed, paste an https://... URL and Claude will read it as source material\n` +
+    `  When asked for a seed, paste an https://... URL (article or YouTube video) and Claude will read it as source material\n` +
     `• *post* — publish latest draft to LinkedIn\n` +
     `• *skip* — discard latest draft\n` +
     `• *regenerate* — rewrite with same topic/source\n` +

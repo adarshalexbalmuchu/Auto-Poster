@@ -87,6 +87,119 @@ export function updatePillarLastPosted(clientId, pillarId) {
   renameSync(tmp, path);
 }
 
+// ─── YouTube context fetching ──────────────────────────────────────────────────
+//
+// A YouTube URL pasted as a seed is routed here instead of fetchUrlContext():
+// scraping the raw video page only gets a truncated ~155-char og:description,
+// while the YouTube Data API v3 (a plain API key, no OAuth) returns the full
+// title/description/channel — much better grounding material.
+
+export function extractYouTubeVideoId(urlStr) {
+  let url;
+  try { url = new URL(urlStr); } catch { return null; }
+  const host = url.hostname.replace(/^www\.|^m\./, '');
+  const idPattern = /^[\w-]{11}$/;
+
+  if (host === 'youtu.be') {
+    const id = url.pathname.slice(1).split('/')[0];
+    return idPattern.test(id) ? id : null;
+  }
+  if (host === 'youtube.com') {
+    if (url.pathname === '/watch') {
+      const id = url.searchParams.get('v');
+      return id && idPattern.test(id) ? id : null;
+    }
+    const m = url.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]{11})/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function decodeCaptionEntities(s) {
+  return s
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+}
+
+// Best-effort transcript fetch — NOT part of the official Data API (that needs
+// OAuth, not just an API key, to download captions). Instead this scrapes the
+// video watch page for the caption track URL, the same mechanism the YouTube
+// player itself uses in the browser: no auth needed, but it depends on
+// YouTube's page structure and isn't guaranteed to keep working. Every failure
+// mode (no captions, page structure changes, network error) resolves to null
+// rather than throwing, so a broken transcript fetch never blocks generation —
+// it just falls back to the Data API's title/description, fetched separately.
+async function fetchYouTubeTranscript(videoId) {
+  try {
+    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!pageRes.ok) return null;
+    const html = await pageRes.text();
+
+    const match = html.match(/"captionTracks":(\[.*?\])(?=,")/);
+    if (!match) return null;
+    const tracks = JSON.parse(match[1].replace(/\\u0026/g, '&'));
+    if (!tracks?.length) return null;
+
+    const track = tracks.find(t => t.languageCode?.startsWith('en')) || tracks[0];
+    if (!track?.baseUrl) return null;
+
+    const capRes = await fetch(track.baseUrl, { signal: AbortSignal.timeout(15_000) });
+    if (!capRes.ok) return null;
+    const xml = await capRes.text();
+
+    const lines = [...xml.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
+      .map(m => decodeCaptionEntities(m[1]).replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    return lines.length ? lines.join(' ') : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchYouTubeContext(videoId) {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      'YOUTUBE_API_KEY not set — required to read YouTube video details. ' +
+      'Get one from Google Cloud Console (enable "YouTube Data API v3"), then add it to .env / GitHub Secrets.'
+    );
+  }
+
+  const apiUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+  apiUrl.searchParams.set('part', 'snippet');
+  apiUrl.searchParams.set('id', videoId);
+  apiUrl.searchParams.set('key', apiKey);
+
+  const res = await fetch(apiUrl, { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`YouTube Data API error (${res.status}): ${body.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const item = data.items?.[0];
+  if (!item) throw new Error('YouTube video not found (private, deleted, or an invalid link).');
+
+  const { title, description, channelTitle, publishedAt } = item.snippet;
+  let text =
+    `YouTube video: "${title}"\n` +
+    `Channel: ${channelTitle}\n` +
+    `Published: ${publishedAt?.slice(0, 10) || 'unknown'}\n\n` +
+    `Description:\n${description || '(no description provided)'}`;
+
+  const transcript = await fetchYouTubeTranscript(videoId);
+  if (transcript) {
+    text += `\n\nTranscript:\n${transcript}`;
+  }
+
+  return text.length > 50_000 ? text.slice(0, 50_000) + '…' : text;
+}
+
 // ─── URL context fetching ─────────────────────────────────────────────────────
 
 export async function fetchUrlContext(url) {
@@ -300,7 +413,8 @@ export async function generateForClient(clientId, opts = {}) {
   let contextText = null;
   if (opts.url) {
     console.log(`Fetching source context from: ${opts.url}`);
-    contextText = await fetchUrlContext(opts.url);
+    const youtubeId = extractYouTubeVideoId(opts.url);
+    contextText = youtubeId ? await fetchYouTubeContext(youtubeId) : await fetchUrlContext(opts.url);
     console.log(`  Extracted ${contextText.length} chars`);
   }
 

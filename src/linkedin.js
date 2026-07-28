@@ -2,7 +2,10 @@
  * linkedin.js — LinkedIn API client (text posts via UGC Posts API)
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+
 const LINKEDIN_API_V2 = 'https://api.linkedin.com/v2';
+const MENTIONS_PATH = './clients/mentions.json';
 
 export function envKey(clientId, suffix) {
   return process.env[`${clientId.toUpperCase()}_LINKEDIN_${suffix}`] || process.env[`LINKEDIN_${suffix}`];
@@ -48,26 +51,97 @@ async function apiPost(url, token, body, extraHeaders = {}) {
   return { res, data };
 }
 
-// ─── Text post ────────────────────────────────────────────────────────────────
+// ─── Mentions (tagging companies/people) ───────────────────────────────────
+//
+// NOTE — lower confidence, unverified against the live API: this follows
+// LinkedIn's documented "TextAttribute" pattern for the classic /v2/ugcPosts
+// endpoint (character-offset spans in shareCommentary.text, each pointing at
+// an organization/member URN). There's no accessible name→URN lookup API for
+// arbitrary companies with this app's scope (that needs Marketing Developer
+// Platform partner access), so clients/mentions.json is a manually maintained
+// map — only names you've added get tagged, everything else stays plain text.
+// If LinkedIn rejects a post because of this, publishUgcPost() below retries
+// once with attributes stripped, so a bad/rejected tag can never take down
+// the whole post — worst case, mentions silently don't get tagged.
 
-export async function postText(client, text) {
-  const token = requireToken(client);
-  const { personUrn } = getCredentials(client);
+function loadMentions() {
+  if (!existsSync(MENTIONS_PATH)) return {};
+  try {
+    return JSON.parse(readFileSync(MENTIONS_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
 
-  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, {
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Finds non-overlapping occurrences of known mention names in `text`, longest
+// names matched first so e.g. "Provoke AI" wins over a bare "Provoke" inside it.
+function findMentionAttributes(text) {
+  const mentions = loadMentions();
+  const names = Object.keys(mentions).sort((a, b) => b.length - a.length);
+  if (!names.length) return [];
+
+  const taken = [];
+  const attributes = [];
+
+  for (const name of names) {
+    const entry = mentions[name];
+    if (!entry?.urn || (entry.type !== 'organization' && entry.type !== 'person')) continue;
+
+    const re = new RegExp(`\\b${escapeRegExp(name)}\\b`, 'gi');
+    let m;
+    while ((m = re.exec(text))) {
+      const start = m.index, end = start + m[0].length;
+      if (taken.some(([s, e]) => start < e && end > s)) continue;
+      taken.push([start, end]);
+      const key = entry.type === 'person' ? 'com.linkedin.common.MemberAttributedEntity' : 'com.linkedin.common.CompanyAttributedEntity';
+      const valueKey = entry.type === 'person' ? 'member' : 'company';
+      attributes.push({ start, length: m[0].length, value: { [key]: { [valueKey]: entry.urn } } });
+    }
+  }
+
+  return attributes.sort((a, b) => a.start - b.start);
+}
+
+// Shared ugcPost creation for all post types (text/image/document), with the
+// mention-tagging attempt and its safe fallback centralized in one place.
+async function publishUgcPost(token, personUrn, text, shareMediaCategory, media) {
+  const attributes = findMentionAttributes(text);
+  const buildBody = (withAttributes) => ({
     author: personUrn,
     lifecycleState: 'PUBLISHED',
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
-        shareCommentary: { text },
-        shareMediaCategory: 'NONE',
+        shareCommentary: withAttributes && attributes.length ? { text, attributes } : { text },
+        shareMediaCategory,
+        ...(media ? { media } : {}),
       },
     },
     visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
   });
 
+  let res, data;
+  try {
+    ({ res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, buildBody(true)));
+  } catch (e) {
+    if (!attributes.length) throw e;
+    console.warn(`LinkedIn rejected the post with mention tags (${e.message}) — retrying without tags.`);
+    ({ res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, buildBody(false)));
+  }
+
   const postId = res.headers.get('x-restli-id') || data?.id || null;
   return { postId, data };
+}
+
+// ─── Text post ────────────────────────────────────────────────────────────────
+
+export async function postText(client, text) {
+  const token = requireToken(client);
+  const { personUrn } = getCredentials(client);
+  return publishUgcPost(token, personUrn, text, 'NONE');
 }
 
 // ─── Media asset upload (shared by image and document posts) ──────────────────
@@ -133,21 +207,7 @@ export async function postImages(client, text, images) {
     mediaEntries.push({ status: 'READY', media: asset });
   }
 
-  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, {
-    author: personUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: { text },
-        shareMediaCategory: 'IMAGE',
-        media: mediaEntries,
-      },
-    },
-    visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
-  });
-
-  const postId = res.headers.get('x-restli-id') || data?.id || null;
-  return { postId, data };
+  return publishUgcPost(token, personUrn, text, 'IMAGE', mediaEntries);
 }
 
 // ─── Document post (PDF carousel) ──────────────────────────────────────────
@@ -167,21 +227,7 @@ export async function postDocument(client, text, pdfBytes, title = 'Document') {
 
   const asset = await registerAndUploadAsset(token, personUrn, pdfBytes, 'application/pdf', 'urn:li:digitalmediaRecipe:feedshare-document');
 
-  const { res, data } = await apiPost(`${LINKEDIN_API_V2}/ugcPosts`, token, {
-    author: personUrn,
-    lifecycleState: 'PUBLISHED',
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: { text },
-        shareMediaCategory: 'IMAGE',
-        media: [{ status: 'READY', media: asset, title: { text: title } }],
-      },
-    },
-    visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
-  });
-
-  const postId = res.headers.get('x-restli-id') || data?.id || null;
-  return { postId, data };
+  return publishUgcPost(token, personUrn, text, 'IMAGE', [{ status: 'READY', media: asset, title: { text: title } }]);
 }
 
 // ─── Comments ───────────────────────────────────────────────────────────────
