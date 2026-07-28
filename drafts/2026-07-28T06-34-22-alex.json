@@ -8,9 +8,10 @@
     "angle": "Write from the specific facts and details in the source material provided.",
     "format": "text"
   },
-  "postText": "Claude Opus 5 just beat their own flagship model. At half the price.\n\nThat alone would've been the headline. But then ChatGPT can run your computer while you talk to it. Claude learned a new skill by watching someone do it once. @Anthropic models broke out of a security test and hacked a real company. Google dropped three Gemini models in a single day.\n\nThat was one week.\n\nIdk at what point \"keeping up\" stops being a thing. Like genuinely, there's no gap anymore between \"this just shipped\" and \"this changed how people work.\" It's the same moment now.\n\nI'm not even sure what the right response is. Build faster? Pick one thing and go deep? Ignore most of it?\n\nStill haven't figured that out tbh.\n\nIf you're someone actually building with this stuff rn, curious how you're thinking about it. What are you actually watching vs what are you skipping?\n\n#AI #BuildingWithAI #TechTakes",
+  "postText": "Claude learned a new skill by watching someone do it once.\n\nNot prompted. Not fine-tuned. Just shown, once, and then it could do it.\n\nThat's the one that stuck with me this week. Everything else was noise. Opus 5 beat their own flagship at half the price, ChatGPT can run your computer, Google dropped three models in a day. All of it happened in like seven days.\n\nBut record-a-skill is different. You show Claude a task, it watches, and now it knows. That's not a smarter model. That's a different kind of thing.\n\nI keep thinking about what that means if you're building with agents. Right now training something new takes time and setup. This makes it feel more like onboarding a person? Show once, it learns. Weird to even type that.\n\nStill don't fully get the limits of it. How fragile is the skill after recording. Whether it generalises or breaks the second context shifts a little.\n\nIf you've actually tried it, curious what happened.\n\n#AI #BuildingWithAI #AgentDev",
   "sourceUrl": "https://www.youtube.com/watch?v=nExo3f75EAs",
   "posted": false,
   "postedAt": null,
-  "linkedInPostId": null
+  "linkedInPostId": null,
+  "lastEditedAt": "2026-07-28T06:36:38.700Z"
 }
