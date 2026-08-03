@@ -1,0 +1,16 @@
+{
+  "id": "2026-08-03T14-41-04-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-08-03T14:41:04.308Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "Enterprise AI spending is shifting from API token consumption to infrastructure ownership — and what that means for telecoms and logistics leaders who've already bet on external platforms",
+    "angle": "Palantir's CEO just said enterprises are 'paying for tokens that create no value.' He's not wrong. But the real problem isn't the tokens. It's that you've already handed over the thing that makes your organisation different.",
+    "format": "text"
+  },
+  "postText": "Palantir's CEO said enterprises are paying for tokens that create no value. That's the headline. The sharper line was the one about handing over the \"weights and alpha\" of your business.\n\nThat's where I'd push back on most AI strategies I've seen.\n\nA telecoms operator with 28,000 employees has proprietary network optimisation logic, customer churn patterns, routing decisions built over decades. A logistics company has the same. That knowledge is the asset. Not the model sitting on top of it.\n\nAnd a lot of organisations fed that knowledge into external platforms in exchange for faster deployment. Now the same vendor is infrastructure provider, API seller, and a potential future competitor. The structural incentive has changed, even if the contract hasn't.\n\nThe economics are shifting too. Inference costs on owned infrastructure are reportedly dramatically lower than premium API services. So you paid more, and gave more away.\n\nI haven't seen many telecoms or logistics leaders reckon with that combination yet. Most are still asking which model performs best.\n\nThat's the wrong question now.\n\nIf you've started moving workloads back in-house, what made the decision finally land?\n\n#EnterpriseAI\n#DigitalTransformation\n#TechLeadership",
+  "sourceUrl": "https://www.forbes.com/sites/viviantoh/2026/07/20/the-enterprise-ai-reckoning-the-next-phase-of-the-ai-economy/",
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
