@@ -68,5 +68,12 @@
     "topic": "i want to give me opion on the article by the authur . and how this can hapen in india as well being the most users of AI",
     "hook": "36% of Americans think China is more advanced at AI than the US. Only 12% think the US is leading. These are Americans talking about their own country.",
     "date": "2026-07-28"
+  },
+  {
+    "client": "irfan",
+    "pillar": "delivery-lens",
+    "topic": "Enterprise AI spending is shifting from API token consumption to infrastructure ownership — and what that means for telecoms and logistics leaders who've already bet on external platforms",
+    "hook": "Palantir's CEO said enterprises are paying for tokens that create no value. That's the headline. The sharper line was the one about handing over the \"weights and alpha\" of your business.",
+    "date": "2026-08-03"
   }
 ]
