@@ -61,12 +61,38 @@ export async function sendDraftNotification(result) {
 
   const { client, topicData, postText } = result;
 
-  const header = `✦ *New draft ready — ${client.name}*\n*Pillar:* ${topicData.pillarId}\n*Topic:* ${topicData.topic}\n\n`;
-  const preview = postText.length > 3900 ? postText.slice(0, 3900) + '…' : postText;
-  await waPost(phoneNumberId, token, {
-    messaging_product: 'whatsapp', to, type: 'text',
-    text: { body: `${header}---\n${preview}\n---` },
-  });
+  // WhatsApp hard-caps text.body at 4096 chars. The topic can be huge when
+  // it's a block of pasted article text used as the seed (the workaround for
+  // sites that block automated fetching), so it needs its own bound — a fixed
+  // truncation of postText alone isn't enough once the header grows past it.
+  const MAX_BODY = 4000;
+  const topic = topicData.topic.length > 200
+    ? topicData.topic.slice(0, 200) + '…'
+    : topicData.topic;
+  const header = `✦ *New draft ready — ${client.name}*\n*Pillar:* ${topicData.pillarId}\n*Topic:* ${topic}\n\n---\n`;
+  const footer = '\n---';
+  const previewBudget = Math.max(0, MAX_BODY - header.length - footer.length);
+  const preview = postText.length > previewBudget
+    ? postText.slice(0, previewBudget) + '…'
+    : postText;
+
+  try {
+    await waPost(phoneNumberId, token, {
+      messaging_product: 'whatsapp', to, type: 'text',
+      text: { body: `${header}${preview}${footer}` },
+    });
+  } catch (e) {
+    // Never leave the user with a generated draft they have no way to know
+    // about — if the full preview still fails for some other reason, fall
+    // back to a short alert so they at least know to check for it.
+    console.warn(`[whatsapp] Full draft notification failed (${e.message}); sending fallback alert`);
+    await waPost(phoneNumberId, token, {
+      messaging_product: 'whatsapp', to, type: 'text',
+      text: {
+        body: `✦ *New draft ready — ${client.name}*\n*Pillar:* ${topicData.pillarId}\n\nThe full preview couldn't be sent. Reply *post* to publish it as-is.`,
+      },
+    });
+  }
 
   await sendButtons(phoneNumberId, token, to,
     'What would you like to do?\n\nTo refine, reply *edit: [your instruction]*\ne.g. _edit: sharpen the hook_\n\nOr *schedule: [when]* to post later, e.g. _schedule: 9am tomorrow_',
