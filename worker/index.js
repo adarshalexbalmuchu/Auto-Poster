@@ -15,11 +15,20 @@
  *   WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
  *
  * KV namespace binding (wrangler.toml):
- *   STATE — conversation state per user (1h TTL); WhatsApp-uploaded images/
- *           documents awaiting post (media:<phone>:<n>, 7d TTL, served via
- *           /media to the Action); scheduled posts (scheduled:<ISO-UTC>:<phone>,
- *           checked every 15 min by the `scheduled` cron handler below); and
- *           pending comment-reply approvals (commentreply:<phone>:<id>, 7d TTL)
+ *   STATE — WhatsApp-uploaded images/documents awaiting post
+ *           (media:<phone>:<n>, 7d TTL, served via /media to the Action);
+ *           scheduled posts (scheduled:<ISO-UTC>:<phone>, checked every
+ *           15 min by the `scheduled` cron handler below); and pending
+ *           comment-reply approvals (commentreply:<phone>:<id>, 7d TTL)
+ *
+ * Durable Object binding (wrangler.toml):
+ *   CONVERSATION_STATE — one instance per phone number, holding "what step
+ *           is this chat on, what's attached" (1h TTL via alarm). This used
+ *           to live in KV, but KV is only eventually consistent across edge
+ *           locations (a write can read as stale from a different colo for
+ *           up to ~60s), which could drop an image/document attached right
+ *           before "Post it" was tapped. A Durable Object gives every
+ *           read/write for a given phone number a single consistent home.
  */
 
 const WA_API = 'https://graph.facebook.com/v20.0';
@@ -165,19 +174,74 @@ async function verifySignature(request, secret) {
   return timingSafeEqual(signature, expected);
 }
 
-// ── State management (Cloudflare KV) ───────────────────────────────────────
+// ── State management (Durable Object — see ConversationState below) ────────
+
+function conversationStub(env, from) {
+  const id = env.CONVERSATION_STATE.idFromName(from);
+  return env.CONVERSATION_STATE.get(id);
+}
 
 async function getState(env, from) {
-  const raw = await env.STATE.get(`state:${from}`);
-  return raw ? JSON.parse(raw) : { step: 'idle' };
+  const res = await conversationStub(env, from).fetch('https://conversation-state/state');
+  return res.ok ? await res.json() : { step: 'idle' };
 }
 
 async function setState(env, from, state) {
-  await env.STATE.put(`state:${from}`, JSON.stringify(state), { expirationTtl: 3600 });
+  await conversationStub(env, from).fetch('https://conversation-state/state', {
+    method: 'PUT',
+    body: JSON.stringify(state),
+  });
 }
 
 async function clearState(env, from) {
-  await env.STATE.delete(`state:${from}`);
+  await conversationStub(env, from).fetch('https://conversation-state/state', { method: 'DELETE' });
+}
+
+// One Durable Object instance per phone number. Unlike KV, every request for
+// a given ID is routed to the same single-threaded instance, so a write is
+// immediately visible to the very next read — no cross-colo propagation
+// window, which is what let an image attachment race a "Post it" tap and
+// silently get left out of the post.
+const STATE_TTL_MS = 3600_000; // 1h — matches the previous KV expirationTtl
+
+export class ConversationState {
+  constructor(state) {
+    this.storage = state.storage;
+  }
+
+  async fetch(request) {
+    if (new URL(request.url).pathname !== '/state') {
+      return new Response('Not Found', { status: 404 });
+    }
+
+    if (request.method === 'GET') {
+      const entry = await this.storage.get('data');
+      if (!entry || entry.expiresAt < Date.now()) return Response.json({ step: 'idle' });
+      return Response.json(entry.value);
+    }
+
+    if (request.method === 'PUT') {
+      const value = await request.json();
+      const expiresAt = Date.now() + STATE_TTL_MS;
+      await this.storage.put('data', { value, expiresAt });
+      await this.storage.setAlarm(expiresAt);
+      return new Response('OK');
+    }
+
+    if (request.method === 'DELETE') {
+      await this.storage.delete('data');
+      await this.storage.deleteAlarm();
+      return new Response('OK');
+    }
+
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  // TTL expiry — mirrors the old KV expirationTtl so a stale session doesn't
+  // linger indefinitely if the user never comes back to clear it.
+  async alarm() {
+    await this.storage.delete('data');
+  }
 }
 
 // ── Internal callback handler (from GitHub Actions) ────────────────────────
@@ -248,6 +312,7 @@ export default {
       ];
       const checks = Object.fromEntries(required.map(k => [k, !!env[k]]));
       checks.STATE_KV = !!env.STATE;
+      checks.CONVERSATION_STATE_DO = !!env.CONVERSATION_STATE;
       const ok = Object.values(checks).every(Boolean);
       return Response.json({ status: ok ? 'ok' : 'degraded', checks }, { status: ok ? 200 : 503 });
     }
@@ -739,7 +804,8 @@ async function handleButtonReply(env, from, id) {
 
   if (id.startsWith('pillar:')) {
     // id format: pillar:<clientId>:<pillarId|claude>
-    // Client is embedded in the button ID to avoid KV eventual-consistency gaps between taps.
+    // Client is embedded in the button ID itself so this handler doesn't need
+    // a state read at all to know which client the tap was for.
     const [, clientId, pillarPart] = id.split(':');
     const pillar = pillarPart === 'claude' ? null : pillarPart;
     await setState(env, from, { step: 'awaiting_seed', client: clientId, pillar });
