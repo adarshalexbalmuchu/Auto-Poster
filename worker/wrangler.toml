@@ -24,7 +24,7 @@ class_name = "ConversationState"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ConversationState"]
+new_sqlite_classes = ["ConversationState"]
 
 [triggers]
 # Checks for due scheduled posts (see the `scheduled` handler in index.js).

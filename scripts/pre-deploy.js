@@ -75,12 +75,15 @@ if (!existsSync(tomlPath)) {
     );
   }
 
-  if (toml.includes('new_classes') && toml.includes('ConversationState')) {
+  // new_sqlite_classes (not new_classes) — the SQLite storage backend is what
+  // makes Durable Objects work on the Workers Free plan; the classic backend
+  // requires Workers Paid.
+  if (toml.includes('new_sqlite_classes') && toml.includes('ConversationState')) {
     ok('ConversationState Durable Object migration configured');
   } else {
     fail(
       'ConversationState Durable Object migration configured',
-      'Add [[migrations]]\\ntag = "v1"\\nnew_classes = ["ConversationState"] — required once, before first deploy with the binding'
+      'Add [[migrations]]\\ntag = "v1"\\nnew_sqlite_classes = ["ConversationState"] — required once, before first deploy with the binding'
     );
   }
 }
