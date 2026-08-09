@@ -31,7 +31,7 @@ WhatsApp "new post"
 |-------|------|
 | AI generation | Anthropic Claude (`claude-sonnet-4-6` writing, `claude-haiku-4-5` topic picking) |
 | Control interface | Meta WhatsApp Cloud API |
-| Webhook handler | Cloudflare Worker + Cloudflare KV (state) |
+| Webhook handler | Cloudflare Worker + Durable Object (conversation state) + KV (media/schedules) |
 | Pipeline runner | GitHub Actions |
 | Publishing | LinkedIn UGC Posts API |
 | Scheduling | GitHub Actions cron (token check, 24h stats) |

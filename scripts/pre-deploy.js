@@ -65,6 +65,24 @@ if (!existsSync(tomlPath)) {
       'Add [triggers]\\ncrons = ["*/15 * * * *"] — without it, "schedule: ..." posts are stored but never fire'
     );
   }
+
+  if (toml.includes('[[durable_objects.bindings]]') && toml.includes('CONVERSATION_STATE')) {
+    ok('CONVERSATION_STATE Durable Object binding configured');
+  } else {
+    fail(
+      'CONVERSATION_STATE Durable Object binding configured',
+      'Add [[durable_objects.bindings]]\\nname = "CONVERSATION_STATE"\\nclass_name = "ConversationState" — without it, conversation state has nowhere to live'
+    );
+  }
+
+  if (toml.includes('new_classes') && toml.includes('ConversationState')) {
+    ok('ConversationState Durable Object migration configured');
+  } else {
+    fail(
+      'ConversationState Durable Object migration configured',
+      'Add [[migrations]]\\ntag = "v1"\\nnew_classes = ["ConversationState"] — required once, before first deploy with the binding'
+    );
+  }
 }
 
 // ── 2. Required secrets set in Cloudflare ───────────────────────────────────
