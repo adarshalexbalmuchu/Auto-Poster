@@ -12,6 +12,28 @@ enabled = true
 binding = "STATE"
 id = "7184454afd984de8b46e788fdf689a2a"
 
+# Per-phone-number conversation state (the "what step is this chat on, what's
+# attached" data) lives in a Durable Object instead of KV. KV is only
+# eventually consistent across edge locations — a value written by one
+# request can read as stale from another for up to ~60s, which was dropping
+# image/document attachments made right before "Post it" was tapped. A DO
+# gives every read/write for a given phone number a single consistent home.
+[[durable_objects.bindings]]
+name = "CONVERSATION_STATE"
+class_name = "ConversationState"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ConversationState"]
+# NOTE: Cloudflare's "gradual deployments" flow (deploy command
+# `npx wrangler versions upload`) rejects any deploy containing a Durable
+# Object migration — "migrations must be fully applied via a non-versioned
+# deployment". If the Workers Build's Deploy command (Settings → Build
+# configuration, in the Cloudflare dashboard — not this file) is set to
+# `wrangler versions upload`, change it to `wrangler deploy`. This project
+# doesn't use staged version promotion, so there's no downside to leaving it
+# on `wrangler deploy` permanently.
+
 [triggers]
 # Checks for due scheduled posts (see the `scheduled` handler in index.js).
 crons = ["*/15 * * * *"]
