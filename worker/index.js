@@ -212,6 +212,26 @@ async function handleCallback(request, env) {
     await notifyCommentReply(env, body);
   }
 
+  // Generation failed on the Actions side (bad URL, blocked fetch, API error,
+  // etc.) — state was left at 'generating' with no other path back out of it,
+  // so the user's next message would just get 'still generating, please wait'
+  // forever. Reset to awaiting_seed (keeping client/pillar) so a retry is
+  // picked up immediately instead of silently going nowhere.
+  if (body.type === 'generation_failed' && body.phone) {
+    if (body.phone !== env.WHATSAPP_OWNER_NUMBER) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    const cur = await getState(env, body.phone);
+    if (cur.step === 'generating') {
+      await setState(env, body.phone, {
+        ...cur,
+        step: 'awaiting_seed',
+        client: body.client || cur.client,
+        pillar: body.pillar || cur.pillar,
+      });
+    }
+  }
+
   return new Response('OK', { status: 200 });
 }
 

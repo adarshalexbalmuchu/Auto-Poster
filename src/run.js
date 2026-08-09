@@ -142,14 +142,48 @@ Options:
   await postIfRequested(filename, opts);
 }
 
+// On failure, the Worker's conversation is left at step: "generating" — it
+// only advances past that on the success callback (draft_ready), so without
+// this the user is stuck seeing "still generating" forever on their next
+// message, no matter what they send. Reset it back to awaiting_seed so a
+// retry (new URL, pasted text, whatever) is picked up immediately.
+async function notifyWorkerOfFailure() {
+  const workerUrl      = process.env.WORKER_URL;
+  const callbackSecret = process.env.WORKER_CALLBACK_SECRET;
+  const phone          = process.env.INPUT_PHONE;
+  if (!workerUrl || !callbackSecret || !phone) return;
+
+  try {
+    const res = await fetch(`${workerUrl}/callback`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${callbackSecret}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'auto-poster-worker/1.0',
+      },
+      body: JSON.stringify({
+        type: 'generation_failed',
+        phone,
+        client: process.env.INPUT_CLIENT || null,
+        pillar: process.env.INPUT_PILLAR || null,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) console.warn(`Worker failure-callback returned ${res.status}`);
+  } catch (e) {
+    console.warn(`Worker failure-callback skipped: ${e.message}`);
+  }
+}
+
 main().catch(async e => {
   console.error('\nFailed:', e.message);
   // Don't fail silently — the WhatsApp user is left staring at "Reading source
   // URL..." otherwise. Best-effort notify; never let this mask the real error.
   try {
-    await sendWhatsApp(`⚠️ Post generation failed.\n\n${e.message}`);
+    await sendWhatsApp(`⚠️ Post generation failed.\n\n${e.message}\n\nReply with a new topic, link, or pasted text to try again.`);
   } catch (notifyErr) {
     console.error('  (could not send failure notification:', notifyErr.message + ')');
   }
+  await notifyWorkerOfFailure();
   process.exit(1);
 });
