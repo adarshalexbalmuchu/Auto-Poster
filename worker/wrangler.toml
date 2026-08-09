@@ -25,6 +25,14 @@ class_name = "ConversationState"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ConversationState"]
+# NOTE: Cloudflare's "gradual deployments" flow (deploy command
+# `npx wrangler versions upload`) rejects any deploy containing a Durable
+# Object migration — "migrations must be fully applied via a non-versioned
+# deployment". If the Workers Build's Deploy command (Settings → Build
+# configuration, in the Cloudflare dashboard — not this file) is set to
+# `wrangler versions upload`, change it to `wrangler deploy`. This project
+# doesn't use staged version promotion, so there's no downside to leaving it
+# on `wrangler deploy` permanently.
 
 [triggers]
 # Checks for due scheduled posts (see the `scheduled` handler in index.js).
