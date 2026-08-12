@@ -10,8 +10,8 @@
   },
   "postText": "Most AI tools built for enterprise don't actually close anything. They summarise, suggest, and hand back to a human. That's a copilot. That's not the same thing as work moving forward.\n\nThe Oracle piece on agentic applications made me stop because the framing was cleaner than most of what I've read lately. \"Systems of record to systems of outcomes.\" That's not marketing language. That's actually describing the gap I've watched organisations fall into for years.\n\nI have seen AI pilots land inside telecoms operators, inside facilities management firms, inside construction supply chains. Same pattern almost every time. The tool gets bolted onto the existing system. It gets good at summarising. It helps people type faster. And then the actual work still sits in someone's queue waiting for a human to push it forward.\n\nThe argument about owning the system of record being the hard part is the one worth taking seriously. Any team can build an agent wrapper. Very few organisations own the transaction history, the approval chains, the audit trail. That's where the actual complexity lives. And without that, agents are just making confident suggestions into a void.\n\nBut I'll be honest. Oracle has been \"transforming enterprise software\" for a long time. This reads like genuinely new architecture. It also reads like strong marketing for capabilities that existed in some form already. Probably both.\n\nThe question I kept coming back to isn't whether agentic applications can move work forward. I think they can, in the right conditions. The question is what human override actually looks like at the moment an agent makes a bad call on a $2M order. That scenario doesn't get a clean answer in most of what I've read on this. And that's the scenario that will define whether finance directors in a 35,000-person business actually let this run.\n\nWhat does accountability look like when the system of outcomes makes the wrong call? That's the conversation I'd want to have.\n\n#EnterpriseAI #TechLeadership #DigitalTransformation",
   "sourceUrl": null,
-  "posted": false,
-  "postedAt": null,
-  "linkedInPostId": null,
+  "posted": true,
+  "postedAt": "2026-08-12T05:00:46.781Z",
+  "linkedInPostId": "urn:li:share:7493169587367153664",
   "lastEditedAt": "2026-08-12T04:56:22.618Z"
 }
