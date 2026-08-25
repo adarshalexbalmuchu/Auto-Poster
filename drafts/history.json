@@ -96,5 +96,12 @@
     "topic": "The United States is reportedly preparing to ask countries participating in its AI cooperation framework to choose between the US-led Pax Silica initiative and China’s competing AI coalition. According to Reuters, the proposal is contained in an internal draft and has not yet been confirmed as final US policy.\n\nThe development suggests that AI is becoming more than a technology competition. The emerging divide covers AI models, semiconductor chips, critical minerals, investment, export controls and security standards.\n\nFocus the post on what this means for governments and enterprises: selecting an AI platform may increasingly involve choosing a wider geopolitical ecosystem. Examine the implications for technology sovereignty, vendor selection, supply-chain resilience and countries such as India that may prefer strategic autonomy instead of exclusive alignment with either side.\n\nCentral argument: We spent the last few years comparing model capabilities. The next phase of the AI race may be about ecosystem compatibility—and whether organisations can safely combine technologies originating from competing geopolitical blocs.\n\nWrite this as a thoughtful, analytical LinkedIn post. Avoid sensationalism and do not present the reported US proposal as final policy. End by asking whether countries can preserve technological autonomy when access to AI infrastructure increasingly depends on political alignment.",
     "hook": "Choosing an AI vendor may soon be a foreign policy decision. Most technology leaders aren't ready for that sentence.",
     "date": "2026-08-18"
+  },
+  {
+    "client": "irfan",
+    "pillar": "sharp-takes",
+    "topic": "Can an enterprise outsource its AI transformation without outsourcing its future capability?",
+    "hook": "Outsourcing your AI transformation is fine. Outsourcing your ability to understand what's happening to your own business is a different thing entirely.",
+    "date": "2026-08-25"
   }
 ]
