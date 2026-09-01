@@ -10,7 +10,7 @@
   },
   "postText": "Everyone is getting an AI agent. And I'm watching it quietly recreate the management layer we spent a decade trying to flatten.\n\nNot in theory. In practice, right now, in teams I can see directly.\n\nThe assumption behind the agent-per-person model is that the human gets freed up. That's the productivity story. But what I'm actually watching is managers asking \"did the agent complete the task\" instead of \"did the work get done well.\" Supervising outputs. Correcting errors. Re-prompting. Checking again.\n\nThat's not freedom. That's a new inbox.\n\nThe cognitive load didn't disappear. It shifted. And the thing we replaced the old middle layer with is a new layer that needs babysitting but can't tell you when it's confused.\n\nIn a facilities management operation I've worked in, the problem was never that people lacked tools. It was that the underlying workflows were badly designed and nobody had touched them in years. Giving everyone an agent in that environment doesn't improve the process. It accelerates the mess.\n\nDumb workflows scaled by AI are just faster dumb workflows.\n\nWhat's bothering me, and I'm still working through this, is that the productivity gains only materialise if the human on the other end already thinks clearly, already knows what good output looks like, already has a process worth automating. The agent amplifies whatever is already there. Which means if you roll this out organisation-wide before you've answered those questions you're not buying productivity, you're buying speed and calling it the same thing.\n\nMaybe the real question isn't how many agents can one person run. Maybe it's whether the person running agents has ever had to think hard about quality without one.\n\nWhere are you seeing the supervision overhead land in your organisation, and did anyone budget for it?\n\n#EnterpriseAI #TechLeadership #DigitalTransformation",
   "sourceUrl": null,
-  "posted": false,
-  "postedAt": null,
-  "linkedInPostId": null
+  "posted": true,
+  "postedAt": "2026-09-01T10:13:15.129Z",
+  "linkedInPostId": "urn:li:share:7500495981684244480"
 }

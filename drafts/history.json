@@ -103,5 +103,12 @@
     "topic": "Can an enterprise outsource its AI transformation without outsourcing its future capability?",
     "hook": "Outsourcing your AI transformation is fine. Outsourcing your ability to understand what's happening to your own business is a different thing entirely.",
     "date": "2026-08-25"
+  },
+  {
+    "client": "irfan",
+    "pillar": "delivery-lens",
+    "topic": "When every employee gets an AI agent, does productivity actually scale, or does the organisation just create a new management layer made of software?",
+    "hook": "Everyone is getting an AI agent. And I'm watching it quietly recreate the management layer we spent a decade trying to flatten.",
+    "date": "2026-09-01"
   }
 ]
