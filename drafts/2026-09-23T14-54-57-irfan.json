@@ -1,0 +1,16 @@
+{
+  "id": "2026-09-23T14-54-57-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-09-23T14:54:57.622Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "AI is driving one of the largest capital bets in history, led by hyperscalers such as Amazon/AWS, Microsoft, Google and Meta, alongside AI-infrastructure/neocloud players like CoreWeave, Crusoe and Nscale. Trillions are expected to flow into data centres, GPUs, power and compute capacity to serve AI companies such as OpenAI and Anthropic, raising a major question: will AI generate enough economic value to justify this unprecedented infrastructure spending?",
+    "angle": "Write from the specific details and your honest reaction to this topic.",
+    "format": "text"
+  },
+  "postText": "Trillions. Not billions. Trillions flowing into data centres, GPUs, and power infrastructure as @Amazon, @Microsoft, Google, and Meta race to pour concrete faster than each other.\n\nAnd nobody has a clean answer to whether the math works.\n\nThat's the part I keep sitting with. The dependency chain here is extraordinary. CoreWeave and the neocloud players raise at valuations that would have seemed absurd three years ago. They build infrastructure to serve OpenAI and Anthropic. OpenAI and Anthropic need to generate enough real economic value to justify what's being spent to serve them. Pull on any link in that chain and the whole thing needs to hold.\n\nI keep coming back to the fibre optic boom. Trillions laid in the ground through the late nineties. Most of it went dark almost immediately. Then a decade later it became the invisible backbone of everything we do online. The spending wasn't wrong. The timing was just brutal.\n\nSo maybe that's what this is. Infrastructure that's early, not wrong.\n\nOr maybe we're watching the largest capital bet in history being placed on technology that isn't generating returns at the scale the spending requires. Not yet. Maybe not for a long time.\n\nHere's what I notice working inside large organisations. The productivity gains are real but they're uneven and they're hard to aggregate into the kind of revenue growth that justifies trillion-dollar infrastructure buildout. A 40,000-person logistics company doesn't suddenly generate 40% more revenue because its analysts write faster. The value lands differently, and slower, than the capital markets model seems to assume.\n\nI genuinely don't know how this resolves. That's not false modesty. I don't think anyone does.\n\nWhat I do think is that the organisations quietly figuring out where AI actually moves their unit economics, not their productivity scores, are the ones that will matter to this story eventually.\n\nIf you're inside a large non-tech organisation watching this spending, where are you actually seeing the economic return show up?\n\n#EnterpriseAI #TechLeadership #DigitalTransformation",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
