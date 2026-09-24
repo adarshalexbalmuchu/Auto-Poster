@@ -124,5 +124,12 @@
     "topic": "Focus the post on Apple’s leadership transition from Tim Cook to John Ternus and the deeper operating-model question it creates. Cook built one of the most disciplined and successful operating machines in corporate history, but Ternus may now need to challenge parts of that same model as AI changes the basis of competition. The core idea: the hardest companies to transform are often the ones whose existing model has worked exceptionally well. Make it a leadership and organisational transformation story, not a generic Apple or AI post.",
     "hook": "The hardest transformation isn't fixing a broken company. It's changing one whose model still works brilliantly, while the person who built that model is still in the building.",
     "date": "2026-09-06"
+  },
+  {
+    "client": "irfan",
+    "pillar": "delivery-lens",
+    "topic": "AI is driving one of the largest capital bets in history, led by hyperscalers such as Amazon/AWS, Microsoft, Google and Meta, alongside AI-infrastructure/neocloud players like CoreWeave, Crusoe and Nscale. Trillions are expected to flow into data centres, GPUs, power and compute capacity to serve AI companies such as OpenAI and Anthropic, raising a major question: will AI generate enough economic value to justify this unprecedented infrastructure spending?",
+    "hook": "Trillions. Not billions. Trillions flowing into data centres, GPUs, and power infrastructure as @Amazon, @Microsoft, Google, and Meta race to pour concrete faster than each other.",
+    "date": "2026-09-24"
   }
 ]
