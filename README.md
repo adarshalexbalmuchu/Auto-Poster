@@ -284,7 +284,9 @@ npm run auth -- --client irfan
 npm run auth -- --client alex
 ```
 
-Then update `IRFAN_LINKEDIN_ACCESS_TOKEN` / `ALEX_LINKEDIN_ACCESS_TOKEN` in GitHub Secrets.
+Then copy the new values from `.env` into GitHub Secrets — **both** `<CLIENT>_LINKEDIN_ACCESS_TOKEN` **and** `<CLIENT>_LINKEDIN_TOKEN_EXPIRES_AT` (e.g. `IRFAN_LINKEDIN_ACCESS_TOKEN` + `IRFAN_LINKEDIN_TOKEN_EXPIRES_AT`). If only the token is updated, the weekly expiry check keeps reading the old date and won't warn before the next expiry.
+
+If a post fails with `LinkedIn API 401: The token used in the request has expired`, the token is already dead (LinkedIn can also revoke early, e.g. after a password change). Re-auth as above, then re-send the post from WhatsApp.
 
 ---
 
