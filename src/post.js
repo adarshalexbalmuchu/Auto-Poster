@@ -177,7 +177,12 @@ async function main() {
   } catch (e) {
     console.error(`\nFailed: ${e.message}`);
     try {
-      await sendWhatsApp(`⚠️ Posting to LinkedIn failed (${draft.clientId}).\n\n${e.message}`);
+      const prefix = draft.clientId.toUpperCase();
+      const reauthHint = /LinkedIn API 401/.test(e.message)
+        ? `\n\nThe LinkedIn token needs renewing. Run:\n\`npm run auth -- --client ${draft.clientId}\`\n` +
+          `Then update *${prefix}_LINKEDIN_ACCESS_TOKEN* and *${prefix}_LINKEDIN_TOKEN_EXPIRES_AT* in GitHub Secrets, and re-send the post.`
+        : '';
+      await sendWhatsApp(`⚠️ Posting to LinkedIn failed (${draft.clientId}).\n\n${e.message}${reauthHint}`);
     } catch (notifyErr) {
       console.error('  (could not send failure notification:', notifyErr.message + ')');
     }
