@@ -13,6 +13,8 @@
  *   GITHUB_TOKEN             — GitHub PAT with actions:write scope
  *   GITHUB_REPO              — e.g. adarshalexbalmuchu/Auto-Poster
  *   WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
+ *   LINKEDIN_CLIENT_ID       — LinkedIn app client ID (for "renew <client>")
+ *   LINKEDIN_CLIENT_SECRET   — LinkedIn app client secret (for "renew <client>")
  *
  * KV namespace binding (wrangler.toml):
  *   STATE — WhatsApp-uploaded images/documents awaiting post
@@ -29,6 +31,9 @@
  *           up to ~60s), which could drop an image/document attached right
  *           before "Post it" was tapped. A Durable Object gives every
  *           read/write for a given phone number a single consistent home.
+ *           A separate instance ("linkedin-tokens") holds each client's
+ *           LinkedIn access token, renewed from WhatsApp — see "LinkedIn
+ *           token renewal" below.
  */
 
 const WA_API = 'https://graph.facebook.com/v20.0';
@@ -210,7 +215,9 @@ export class ConversationState {
   }
 
   async fetch(request) {
-    if (new URL(request.url).pathname !== '/state') {
+    const { pathname } = new URL(request.url);
+    if (pathname.startsWith('/kv/')) return this.handleKv(request, pathname.slice('/kv/'.length));
+    if (pathname !== '/state') {
       return new Response('Not Found', { status: 404 });
     }
 
@@ -234,6 +241,27 @@ export class ConversationState {
       return new Response('OK');
     }
 
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  // Plain key/value storage with no TTL alarm — used only by the
+  // "linkedin-tokens" instance (tokens + one-time renewal nonces), so it never
+  // touches the per-phone 'data' key or its alarm. DELETE returns the deleted
+  // value so a nonce can be consumed atomically (read + delete in one call).
+  async handleKv(request, key) {
+    if (request.method === 'GET') {
+      const value = await this.storage.get(`kv:${key}`);
+      return value === undefined ? new Response('Not Found', { status: 404 }) : Response.json(value);
+    }
+    if (request.method === 'PUT') {
+      await this.storage.put(`kv:${key}`, await request.json());
+      return new Response('OK');
+    }
+    if (request.method === 'DELETE') {
+      const value = await this.storage.get(`kv:${key}`);
+      await this.storage.delete(`kv:${key}`);
+      return value === undefined ? new Response('Not Found', { status: 404 }) : Response.json(value);
+    }
     return new Response('Method Not Allowed', { status: 405 });
   }
 
@@ -314,7 +342,11 @@ export default {
       checks.STATE_KV = !!env.STATE;
       checks.CONVERSATION_STATE_DO = !!env.CONVERSATION_STATE;
       const ok = Object.values(checks).every(Boolean);
-      return Response.json({ status: ok ? 'ok' : 'degraded', checks }, { status: ok ? 200 : 503 });
+      // Only needed for "renew <client>" — reported, but doesn't mark the Worker degraded.
+      const optional = Object.fromEntries(
+        ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'].map(k => [k, !!env[k]])
+      );
+      return Response.json({ status: ok ? 'ok' : 'degraded', checks, optional }, { status: ok ? 200 : 503 });
     }
 
     // Serve an image stashed from WhatsApp back to the GitHub Action at post time.
@@ -331,6 +363,24 @@ export default {
       return new Response(value, {
         headers: { 'Content-Type': metadata?.mime || 'application/octet-stream' },
       });
+    }
+
+    // Token store read by GitHub Actions (src/linkedin-tokens.js) before any
+    // LinkedIn call. Same shared-secret auth as /media and /callback.
+    if (request.method === 'GET' && url.pathname.startsWith('/linkedin-token/')) {
+      const auth = request.headers.get('Authorization') || '';
+      if (!env.WORKER_CALLBACK_SECRET || !timingSafeEqual(auth, `Bearer ${env.WORKER_CALLBACK_SECRET}`)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const clientId = url.pathname.slice('/linkedin-token/'.length);
+      if (!CLIENTS[clientId]) return new Response('Not Found', { status: 404 });
+      const token = await tokenStoreGet(env, `token:${clientId}`);
+      return token ? Response.json(token) : new Response('Not Found', { status: 404 });
+    }
+
+    // LinkedIn redirects here after the client clicks "Allow" on a renewal link.
+    if (request.method === 'GET' && url.pathname === '/linkedin/callback') {
+      return handleLinkedInCallback(env, url);
     }
 
     // Scope webhook verification strictly to root — prevents other GET paths from leaking challenge.
@@ -389,7 +439,7 @@ export default {
           if (id) await handleButtonReply(env, from, id);
         } else if (message.type === 'text') {
           const text = message.text.body.trim();
-          await handleText(env, from, text);
+          await handleText(env, from, text, url.origin);
         } else if (message.type === 'image') {
           await handleImage(env, from, message);
         } else if (message.type === 'document') {
@@ -539,7 +589,7 @@ async function processDueSchedules(env) {
 
 // ── Text message handler ────────────────────────────────────────────────────
 
-async function handleText(env, from, text) {
+async function handleText(env, from, text, origin) {
   const lower = text.toLowerCase();
   const state = await getState(env, from);
 
@@ -604,6 +654,12 @@ async function handleText(env, from, text) {
 
   if (lower === 'help') {
     await sendHelp(env, from);
+    return;
+  }
+
+  const renewMatch = lower.match(/^(?:renew|reconnect)\s+(\S+)$/);
+  if (renewMatch) {
+    await sendRenewalLink(env, from, renewMatch[1], origin);
     return;
   }
 
@@ -959,10 +1015,175 @@ async function sendHelp(env, from) {
     `  e.g. _schedule: 9am tomorrow_ · _schedule: in 2 hours_ · _schedule: 2026-08-01 09:00_\n` +
     `• *schedule list* — see pending scheduled posts\n` +
     `• *cancel schedule [id]* — cancel a pending scheduled post\n` +
+    `• *renew [client]* — get a LinkedIn reconnect link to forward to the client when their token expires\n` +
+    `  e.g. _renew irfan_\n` +
     `• *status* — check bot status\n` +
     `• *reset* — clear stuck session and start over\n` +
     `• *help* — show this menu`
   );
+}
+
+// ── LinkedIn token renewal ──────────────────────────────────────────────────
+//
+// "renew irfan" → the owner gets a LinkedIn consent link to forward to Irfan.
+// Irfan taps it and clicks Allow → LinkedIn redirects to /linkedin/callback →
+// the Worker exchanges the code, stores the token in the "linkedin-tokens"
+// Durable Object, and confirms on WhatsApp. GitHub Actions read it back via
+// /linkedin-token/<client> (src/linkedin-tokens.js), so nothing needs to be
+// copied into GitHub Secrets.
+//
+// The OAuth `state` is a random one-time nonce stored in the same DO (strongly
+// consistent — Irfan's browser may hit a different edge location than the
+// owner's WhatsApp webhook did, which KV can't guarantee). It is deleted on
+// first use, so a forwarded link can't be replayed to swap in another account.
+
+const LINKEDIN_SCOPES = 'openid profile w_member_social';
+const RENEW_LINK_TTL_MS = 7 * 86_400_000; // long enough for the client to get round to it
+
+function tokenStoreStub(env) {
+  return env.CONVERSATION_STATE.get(env.CONVERSATION_STATE.idFromName('linkedin-tokens'));
+}
+
+async function tokenStoreGet(env, key) {
+  const res = await tokenStoreStub(env).fetch(`https://linkedin-tokens/kv/${encodeURIComponent(key)}`);
+  return res.ok ? res.json() : null;
+}
+
+async function tokenStorePut(env, key, value) {
+  await tokenStoreStub(env).fetch(`https://linkedin-tokens/kv/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: JSON.stringify(value),
+  });
+}
+
+async function tokenStoreTake(env, key) {
+  const res = await tokenStoreStub(env).fetch(`https://linkedin-tokens/kv/${encodeURIComponent(key)}`, { method: 'DELETE' });
+  return res.ok ? res.json() : null;
+}
+
+function linkedInRedirectUri(origin) {
+  return `${origin}/linkedin/callback`;
+}
+
+async function sendRenewalLink(env, from, clientId, origin) {
+  const client = CLIENTS[clientId];
+  if (!client) {
+    await sendText(env, from, `Unknown client "${clientId}". Try: ${Object.keys(CLIENTS).map(c => `*renew ${c}*`).join(' or ')}`);
+    return;
+  }
+  if (!env.LINKEDIN_CLIENT_ID || !env.LINKEDIN_CLIENT_SECRET) {
+    await sendText(env, from,
+      '⚠️ LinkedIn renewal isn\'t set up yet.\n\n' +
+      'Set the Worker secrets *LINKEDIN_CLIENT_ID* and *LINKEDIN_CLIENT_SECRET*, and add ' +
+      `${linkedInRedirectUri(origin)} as an Authorized redirect URL in the LinkedIn app.`
+    );
+    return;
+  }
+
+  const nonce = crypto.randomUUID();
+  await tokenStorePut(env, `nonce:${nonce}`, { clientId, expiresAt: Date.now() + RENEW_LINK_TTL_MS });
+
+  const authUrl = new URL('https://www.linkedin.com/oauth/v2/authorization');
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('client_id', env.LINKEDIN_CLIENT_ID);
+  authUrl.searchParams.set('redirect_uri', linkedInRedirectUri(origin));
+  authUrl.searchParams.set('state', nonce);
+  authUrl.searchParams.set('scope', LINKEDIN_SCOPES);
+
+  await sendText(env, from,
+    `🔑 *Reconnect ${client.name}'s LinkedIn*\n\n` +
+    `Forward the link below to ${client.name}. They open it, sign in to *their own* LinkedIn, and tap *Allow*. ` +
+    `Don't open it yourself — it would connect *your* account instead.\n\n` +
+    `Single use, valid for 7 days. You'll get a confirmation here once it's done.`
+  );
+  await sendText(env, from, authUrl.toString());
+}
+
+function htmlPage(title, body, status = 200) {
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return new Response(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<title>${esc(title)}</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:3rem auto;padding:0 1rem">` +
+    `<h2>${esc(title)}</h2><p>${esc(body)}</p></body>`,
+    { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
+}
+
+async function handleLinkedInCallback(env, url) {
+  const code  = url.searchParams.get('code');
+  const nonce = url.searchParams.get('state');
+  const error = url.searchParams.get('error');
+
+  if (!nonce) return htmlPage('Invalid link', 'This link is missing information. Ask for a new one.', 400);
+
+  // Consume the nonce first, even on error — every link is single use.
+  const pending = await tokenStoreTake(env, `nonce:${nonce}`);
+  if (!pending || pending.expiresAt < Date.now()) {
+    return htmlPage('Link expired', 'This link has already been used or has expired. Ask for a new one.', 400);
+  }
+  const client = CLIENTS[pending.clientId];
+
+  if (error || !code) {
+    await sendText(env, env.WHATSAPP_OWNER_NUMBER,
+      `⚠️ ${client.name}'s LinkedIn reconnect was cancelled (${error || 'no code'}).\n\nReply *renew ${pending.clientId}* for a new link.`
+    ).catch(() => {});
+    return htmlPage('Not connected', 'LinkedIn access was not granted. You can close this page.', 400);
+  }
+
+  try {
+    const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: linkedInRedirectUri(url.origin),
+        client_id: env.LINKEDIN_CLIENT_ID,
+        client_secret: env.LINKEDIN_CLIENT_SECRET,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const tokenData = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok || !tokenData.access_token) {
+      throw new Error(`token exchange failed: ${tokenData.error_description || tokenData.error || tokenRes.status}`);
+    }
+
+    const meRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    const me = await meRes.json().catch(() => ({}));
+    if (!meRes.ok || !me.sub) throw new Error(`profile lookup failed (${meRes.status})`);
+
+    const personUrn = `urn:li:person:${me.sub}`;
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
+    const previous  = await tokenStoreGet(env, `token:${pending.clientId}`);
+    await tokenStorePut(env, `token:${pending.clientId}`, {
+      accessToken: tokenData.access_token,
+      personUrn,
+      expiresAt,
+      name: me.name || null,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // A different LinkedIn account than last time usually means the wrong
+    // person opened the link — flag it so the owner can redo it.
+    const accountChanged = previous?.personUrn && previous.personUrn !== personUrn;
+    await sendText(env, env.WHATSAPP_OWNER_NUMBER,
+      `✅ *${client.name}* reconnected to LinkedIn${me.name ? ` as *${me.name}*` : ''}.\n` +
+      `Valid until ${formatZoned(new Date(expiresAt), client.timezone)}.` +
+      (accountChanged
+        ? `\n\n⚠️ This is a *different LinkedIn account* from before. If that's wrong, reply *renew ${pending.clientId}* and have ${client.name} redo it.`
+        : '')
+    );
+    return htmlPage('All set ✓', `${client.name}'s LinkedIn is reconnected. You can close this page.`);
+  } catch (e) {
+    console.error('[linkedin-callback]', e.message);
+    await sendText(env, env.WHATSAPP_OWNER_NUMBER,
+      `⚠️ ${client.name}'s LinkedIn reconnect failed: ${e.message}\n\nReply *renew ${pending.clientId}* for a new link.`
+    ).catch(() => {});
+    return htmlPage('Something went wrong', 'LinkedIn could not be connected. The account owner has been notified.', 500);
+  }
 }
 
 // ── WhatsApp API ────────────────────────────────────────────────────────────

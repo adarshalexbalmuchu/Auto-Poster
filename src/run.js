@@ -10,6 +10,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { generateForClient, saveDraft, recordTopic } from './generate.js';
 import { postDraft } from './post.js';
 import { sendDraftNotification, sendWhatsApp } from './whatsapp.js';
@@ -109,6 +110,7 @@ async function postIfRequested(filename, { postImmediately, dryRun }) {
 }
 
 async function main() {
+  await loadLinkedInTokens();
   const opts = parseRunArgs();
 
   if (!opts.clientId) {

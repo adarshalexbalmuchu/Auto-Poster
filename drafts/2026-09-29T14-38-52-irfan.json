@@ -1,0 +1,16 @@
+{
+  "id": "2026-09-29T14-38-52-irfan",
+  "clientId": "irfan",
+  "generatedAt": "2026-09-29T14:38:52.872Z",
+  "topicData": {
+    "pillarId": "delivery-lens",
+    "topic": "Anthropic is preparing to go public while explicitly warning prospective investors that increasingly capable AI could pose catastrophic or even existential risks. Beyond the dramatic language, it raises a fascinating finance-and-technology question: how does a market price a business whose biggest long-term risk may be the very capability investors are paying for? Reuters",
+    "angle": "Write from the specific details and your honest reaction to this topic.",
+    "format": "text"
+  },
+  "postText": "Anthropic is about to ask public markets to price a business whose core risk disclosure is civilisational collapse. And the market is going to say yes.\n\nThat's not cynicism. That's just what's happening.\n\nThe standard IPO risk section warns about key person dependency, competitive pressure from @Microsoft, regulatory headwinds. @Anthropic's version says the thing we are building might pose catastrophic or existential risk to humanity. And then asks you to buy in.\n\nWhat I can't stop thinking about: the better they get at building AI, the more dangerous it potentially becomes. And the more valuable the stock becomes. These two things move in the same direction at the same time. The risk is the product. The product is the risk.\n\nI've watched risk frameworks get built inside large organisations. A 40,000-person telecoms company and a facilities management firm with dispersed frontline workers approach AI risk in completely different ways, for completely different operational reasons. But both of them are working within a framework where someone, somewhere, has to be accountable for the downside.\n\nPublic markets have never had to price that accountability when the downside is existential.\n\nThe tobacco comparison is the obvious one. Companies disclosed cancer risk while growing revenue for decades. But tobacco's risk was to the user. This is a company disclosing that the capability investors are paying for might eventually harm everyone, including the investors.\n\nI genuinely don't know what a DCF model looks like when one of the inputs is civilisational instability. What's the discount rate for that scenario? I haven't figured out how you even begin to build that model with a straight face.\n\nThe market is about to put a number on something it has no framework for. And the number it lands on will become the de facto answer to a question nobody has actually solved.\n\nThat's the part I keep coming back to.\n\nWhat framework would you actually use to price that risk?\n\n#EnterpriseAI #TechLeadership",
+  "sourceUrl": null,
+  "posted": false,
+  "postedAt": null,
+  "linkedInPostId": null
+}
