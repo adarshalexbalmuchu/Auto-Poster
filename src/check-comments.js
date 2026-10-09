@@ -12,6 +12,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import Anthropic from '@anthropic-ai/sdk';
 import { loadClient, MODEL, buildHardRules } from './generate.js';
@@ -83,6 +84,7 @@ function saveSeenComments(path, draft, seenIds) {
 }
 
 async function main() {
+  await loadLinkedInTokens();
   const phone = process.env.WHATSAPP_RECIPIENT_NUMBER;
   const entries = loadRecentPostedDrafts();
   if (!entries.length) {

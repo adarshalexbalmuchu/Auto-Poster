@@ -10,6 +10,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { sendWhatsApp } from './whatsapp.js';
 import { getSocialActions } from './analytics.js';
@@ -45,6 +46,7 @@ function engagementBar(n, max = 50) {
 }
 
 async function main() {
+  await loadLinkedInTokens();
   const drafts = loadRecentPostedDrafts();
 
   if (!drafts.length) {

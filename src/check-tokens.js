@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { sendWhatsApp } from './whatsapp.js';
 
 const CLIENTS = [
@@ -10,6 +11,7 @@ const CLIENTS = [
 const WARNING_DAYS = 14;
 
 async function main() {
+  await loadLinkedInTokens();
   const now = Date.now();
   const warnings = [];
 
@@ -17,8 +19,8 @@ async function main() {
     const expiresAt = process.env[client.envKey];
     if (!expiresAt) {
       warnings.push(
-        `⚠️ *${client.name}* — token expiry date missing (${client.envKey} not set).\n` +
-        `Run: \`npm run auth -- --client ${client.id}\``
+        `⚠️ *${client.name}* — token expiry date unknown.\n` +
+        `Reply *renew ${client.id}* for a reconnect link to forward to ${client.name}.`
       );
       continue;
     }
@@ -26,8 +28,7 @@ async function main() {
     if (daysLeft <= WARNING_DAYS) {
       warnings.push(
         `⚠️ *${client.name}* LinkedIn token expires in *${daysLeft} day${daysLeft === 1 ? '' : 's'}* (${expiresAt.slice(0, 10)}).\n` +
-        `Run: \`npm run auth -- --client ${client.id}\`\n` +
-        `Then update *${client.envKey.replace('_TOKEN_EXPIRES_AT', '_ACCESS_TOKEN')}* and *${client.envKey}* in GitHub Secrets.`
+        `Reply *renew ${client.id}* for a reconnect link to forward to ${client.name}.`
       );
     }
   }

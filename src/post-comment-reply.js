@@ -7,11 +7,13 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { loadClient } from './generate.js';
 import { postComment } from './linkedin.js';
 import { sendWhatsApp } from './whatsapp.js';
 
 async function main() {
+  await loadLinkedInTokens();
   const clientId = process.env.INPUT_CLIENT;
   const postUrn  = process.env.INPUT_POST_URN;
   const replyText = process.env.INPUT_REPLY_TEXT;

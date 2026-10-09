@@ -9,6 +9,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
 import { parseGenerateArgs, requireApiKey } from './cli-utils.js';
@@ -567,6 +568,7 @@ export function recordTopic(clientId, topic) {
 // ─── CLI ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  await loadLinkedInTokens();
   const { clientId, pillarId, seed, format } = parseGenerateArgs(process.argv.slice(2));
 
   if (!clientId) {

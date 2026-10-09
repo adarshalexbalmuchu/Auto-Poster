@@ -161,6 +161,8 @@ WHATSAPP_PHONE_NUMBER_ID
 WHATSAPP_OWNER_NUMBER
 GITHUB_TOKEN
 WORKER_CALLBACK_SECRET   — same value as GitHub Actions secret
+LINKEDIN_CLIENT_ID       — optional; enables `renew <client>` (see Token expiry)
+LINKEDIN_CLIENT_SECRET   — optional; enables `renew <client>`
 ```
 
 ---
@@ -180,6 +182,7 @@ WORKER_CALLBACK_SECRET   — same value as GitHub Actions secret
 | `schedule: [when]` | Schedule the current draft instead of posting now — e.g. `schedule: 9am tomorrow` |
 | `schedule list` | See pending scheduled posts |
 | `cancel schedule [id]` | Cancel a pending scheduled post |
+| `renew [client]` | Get a LinkedIn reconnect link to forward to the client — e.g. `renew irfan` |
 | `status` | Check bot is running |
 | `help` | Show all commands |
 
@@ -275,18 +278,34 @@ Tap **Post reply** to publish it, or **Skip** to dismiss. Already-seen comments 
 
 ## Token expiry
 
-Tokens expire every ~60 days. A GitHub Actions cron runs every Monday at 08:00 UTC and sends a WhatsApp warning if either token expires within 14 days.
+Tokens expire every ~60 days. A GitHub Actions cron runs every Monday at 08:00 UTC and sends a WhatsApp warning if either token expires within 14 days. A post that fails with `LinkedIn API 401` also says so on WhatsApp.
 
-To re-auth manually:
+### Renewing from WhatsApp (no terminal)
+
+1. Reply `renew irfan` (or `renew alex`) to the bot.
+2. Forward the link it sends to the client. They open it, sign in to **their own** LinkedIn and tap **Allow**. Don't open it yourself, because that would connect *your* account.
+3. You get `✅ Irfan reconnected to LinkedIn as <name>` on WhatsApp. Re-send any failed post.
+
+The Worker stores the new token in its `linkedin-tokens` Durable Object, and every GitHub Actions script loads it from `GET /linkedin-token/<client>` at startup (`src/linkedin-tokens.js`). Once a client has renewed this way, the `<CLIENT>_LINKEDIN_*` GitHub Secrets are only a fallback and don't need updating. Links are single use and valid for 7 days. If the account that connects differs from the previous one, the confirmation flags it.
+
+**One-time setup:**
+
+1. LinkedIn developer portal → your app → **Auth** → add `https://<your-worker>.workers.dev/linkedin/callback` under *Authorized redirect URLs*.
+2. Set the same app's credentials as Worker secrets:
+   ```bash
+   cd worker
+   npx wrangler secret put LINKEDIN_CLIENT_ID
+   npx wrangler secret put LINKEDIN_CLIENT_SECRET
+   ```
+3. Make sure the `WORKER_URL` and `WORKER_CALLBACK_SECRET` GitHub Actions secrets are set (they already are if WhatsApp posting works).
+
+### Renewing from the terminal (fallback)
 
 ```bash
 npm run auth -- --client irfan
-npm run auth -- --client alex
 ```
 
-Then copy the new values from `.env` into GitHub Secrets — **both** `<CLIENT>_LINKEDIN_ACCESS_TOKEN` **and** `<CLIENT>_LINKEDIN_TOKEN_EXPIRES_AT` (e.g. `IRFAN_LINKEDIN_ACCESS_TOKEN` + `IRFAN_LINKEDIN_TOKEN_EXPIRES_AT`). If only the token is updated, the weekly expiry check keeps reading the old date and won't warn before the next expiry.
-
-If a post fails with `LinkedIn API 401: The token used in the request has expired`, the token is already dead (LinkedIn can also revoke early, e.g. after a password change). Re-auth as above, then re-send the post from WhatsApp.
+Then copy the new values from `.env` into GitHub Secrets — **both** `<CLIENT>_LINKEDIN_ACCESS_TOKEN` **and** `<CLIENT>_LINKEDIN_TOKEN_EXPIRES_AT`. A token renewed over WhatsApp takes precedence over these while it is still valid.
 
 ---
 

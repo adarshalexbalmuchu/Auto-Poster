@@ -13,6 +13,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { envKey } from './linkedin.js';
 
@@ -47,6 +48,7 @@ function loadPostedDrafts(clientId) {
 function fmt(n) { return typeof n === 'number' ? String(n) : '—'; }
 
 async function main() {
+  await loadLinkedInTokens();
   const args = process.argv.slice(2);
   let clientId = null, count = 20;
 

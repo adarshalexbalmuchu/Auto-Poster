@@ -40,6 +40,8 @@ jobs:
           WHATSAPP_ACCESS_TOKEN:       ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
           WHATSAPP_PHONE_NUMBER_ID:    ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
           WHATSAPP_RECIPIENT_NUMBER:   ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          WORKER_URL:                  ${{ secrets.WORKER_URL }}
+          WORKER_CALLBACK_SECRET:      ${{ secrets.WORKER_CALLBACK_SECRET }}
           INPUT_CLIENT:                ${{ inputs.client }}
           INPUT_POST_URN:              ${{ inputs.post_urn }}
           INPUT_REPLY_TEXT:            ${{ inputs.reply_text }}
