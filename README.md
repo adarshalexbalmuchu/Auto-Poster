@@ -286,7 +286,7 @@ Tokens expire every ~60 days. A GitHub Actions cron runs every Monday at 08:00 U
 2. Forward the link it sends to the client. They open it, sign in to **their own** LinkedIn and tap **Allow**. Don't open it yourself, because that would connect *your* account.
 3. You get `✅ Irfan reconnected to LinkedIn as <name>` on WhatsApp. Re-send any failed post.
 
-The Worker stores the new token in its `linkedin-tokens` Durable Object, and every GitHub Actions script loads it from `GET /linkedin-token/<client>` at startup (`src/linkedin-tokens.js`). Once a client has renewed this way, the `<CLIENT>_LINKEDIN_*` GitHub Secrets are only a fallback and don't need updating. Links are single use and valid for 7 days. If the account that connects differs from the previous one, the confirmation flags it.
+The Worker stores the new token in its `linkedin-tokens` Durable Object, and every GitHub Actions script loads it from `GET /linkedin-token/<client>` at startup (`src/linkedin-tokens.js`). Once a client has renewed this way, the `<CLIENT>_LINKEDIN_*` GitHub Secrets are only a fallback and don't need updating. Links are single use and valid for 60 days. If the account that connects differs from the previous one, the confirmation flags it.
 
 **One-time setup:**
 

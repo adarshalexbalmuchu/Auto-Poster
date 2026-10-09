@@ -1038,7 +1038,7 @@ async function sendHelp(env, from) {
 // first use, so a forwarded link can't be replayed to swap in another account.
 
 const LINKEDIN_SCOPES = 'openid profile w_member_social';
-const RENEW_LINK_TTL_MS = 7 * 86_400_000; // long enough for the client to get round to it
+const RENEW_LINK_TTL_MS = 60 * 86_400_000; // long enough for the client to get round to it
 
 function tokenStoreStub(env) {
   return env.CONVERSATION_STATE.get(env.CONVERSATION_STATE.idFromName('linkedin-tokens'));
@@ -1094,7 +1094,7 @@ async function sendRenewalLink(env, from, clientId, origin) {
     `🔑 *Reconnect ${client.name}'s LinkedIn*\n\n` +
     `Forward the link below to ${client.name}. They open it, sign in to *their own* LinkedIn, and tap *Allow*. ` +
     `Don't open it yourself — it would connect *your* account instead.\n\n` +
-    `Single use, valid for 7 days. You'll get a confirmation here once it's done.`
+    `Single use, valid for 60 days. You'll get a confirmation here once it's done.`
   );
   await sendText(env, from, authUrl.toString());
 }
