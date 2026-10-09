@@ -10,6 +10,7 @@
  */
 
 import 'dotenv/config';
+import { loadLinkedInTokens } from './linkedin-tokens.js';
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { postText, postImages, postDocument } from './linkedin.js';
 import { loadClient, updatePillarLastPosted, HISTORY_PATH } from './generate.js';
@@ -134,6 +135,7 @@ function markPosted(draftPath, draft, postId) {
 }
 
 async function main() {
+  await loadLinkedInTokens();
   const args = process.argv.slice(2);
   let draftPath = process.env.INPUT_DRAFT_PATH || null;
   let clientId  = process.env.INPUT_CLIENT || null;
@@ -177,10 +179,9 @@ async function main() {
   } catch (e) {
     console.error(`\nFailed: ${e.message}`);
     try {
-      const prefix = draft.clientId.toUpperCase();
       const reauthHint = /LinkedIn API 401/.test(e.message)
-        ? `\n\nThe LinkedIn token needs renewing. Run:\n\`npm run auth -- --client ${draft.clientId}\`\n` +
-          `Then update *${prefix}_LINKEDIN_ACCESS_TOKEN* and *${prefix}_LINKEDIN_TOKEN_EXPIRES_AT* in GitHub Secrets, and re-send the post.`
+        ? `\n\nThe LinkedIn token needs renewing. Reply *renew ${draft.clientId}* here for a reconnect link, ` +
+          `forward it to them, then re-send the post once they've tapped Allow.`
         : '';
       await sendWhatsApp(`⚠️ Posting to LinkedIn failed (${draft.clientId}).\n\n${e.message}${reauthHint}`);
     } catch (notifyErr) {

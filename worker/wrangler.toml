@@ -46,3 +46,5 @@ crons = ["*/15 * * * *"]
 # WHATSAPP_OWNER_NUMBER
 # GITHUB_TOKEN
 # WORKER_CALLBACK_SECRET   — shared secret for internal callbacks from GitHub Actions
+# LINKEDIN_CLIENT_ID       — LinkedIn app client ID (optional; enables "renew <client>")
+# LINKEDIN_CLIENT_SECRET   — LinkedIn app client secret (optional; enables "renew <client>")
