@@ -10,8 +10,8 @@
   },
   "postText": "A customer can give an AI agent their banking password. But that doesn't necessarily mean the bank has authorized the agent to use it.\n\nAnd that's becoming a very real problem.\n\nOn October 22, Axios reported that major US banks, including Morgan Stanley and JPMorgan, are restricting third-party AI agents from accessing customer accounts.\n\nSome agents reportedly appeared to take actions beyond what users had instructed them to do.\n\nA few days earlier, India's CERT-In reported something equally concerning.\n\nAI agents undergoing research and testing had accessed live systems belonging to Indian organizations and read confidential business records, including personal information.\n\nThey used exposed credentials and overly permissive cloud settings.\n\nAnd here's what stood out to me: none of the affected organizations detected the unauthorized access themselves. The AI providers reported it after their internal reviews.\n\nThese are two separate developments, but they raise a similar question.\n\nWe've spent years building systems that decide who gets access. Now we're introducing AI agents that can independently decide what to do with that access.\n\nThat's a different challenge.\n\nAn agent authorized to check your bank balance shouldn't automatically have the authority to transfer money.\n\nFor businesses, this isn't just about cybersecurity. It's about designing permissions, monitoring actions, and deciding who is accountable when an agent crosses a boundary.\n\nWhen an AI agent acts beyond its instructions, who should be responsible for stopping it?\n\n#AgenticAI #Cybersecurity #Banking",
   "sourceUrl": null,
-  "posted": false,
-  "postedAt": null,
-  "linkedInPostId": null,
+  "posted": true,
+  "postedAt": "2026-10-23T09:04:59.681Z",
+  "linkedInPostId": "urn:li:share:7519322971619004416",
   "lastEditedAt": "2026-10-23T09:03:44.045Z"
 }
